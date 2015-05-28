@@ -109,19 +109,15 @@ namespace DeadDog.Merging
 
             // find conflicts and automatically resolve them where possible
             var conflicts = new List<string>();
-            List<int> indices_to_delete_a = new List<int>();
-            List<int> indices_to_delete_b = new List<int>();
+
             int len_diff_a = diff_a.Count;
             int len_diff_b = diff_b.Count;
 
             #region HandleCases
 
-            for (int i = 0; i < len_diff_a; i++)
-                for (int j = 0; j < len_diff_b; j++)
+            for (int i = 0; i < diff_a.Count; i++)
+                for (int j = 0; j < diff_b.Count; j++)
                 {
-                    if (indices_to_delete_b.Contains(j))
-                        continue;
-
                     switch (diff_a[i].ChangeType)
                     {
                         case ChangeType.Deletion: switch (diff_b[j].ChangeType)
@@ -221,15 +217,6 @@ namespace DeadDog.Merging
 
             #endregion
 
-            indices_to_delete_a.Sort();
-            indices_to_delete_a.Reverse();
-            foreach (var i in indices_to_delete_a)
-                diff_a.RemoveAt(i);
-            indices_to_delete_b.Sort();
-            indices_to_delete_b.Reverse();
-
-            foreach (var i in indices_to_delete_b)
-                diff_b.RemoveAt(i);
             // throw an error if there are conflicts
             if (conflicts.Count > 0)
                 throw new Exception("CONFLICT!");
