@@ -129,7 +129,7 @@ namespace DeadDog.Merging
                                         (diff_b[j].Range.Start < diff_a[i].Range.Start && diff_b[j].Range.End > diff_a[i].Range.End))
                                     {
                                         diff_a[i].Range = new Range(Math.Min(diff_a[i].Range.Start, diff_b[j].Range.Start), Math.Max(diff_a[i].Range.End, diff_b[j].Range.End));
-                                        indices_to_delete_b.Add(j);
+                                        diff_b.RemoveAt(j--);
                                     }
                                     break;
                                 case ChangeType.Insertion:
@@ -163,7 +163,7 @@ namespace DeadDog.Merging
                                     // Insert actions at the same position collide unless the inserted text is the same
                                     if (diff_a[i].Position == diff_b[j].Position)
                                         if (diff_a[i].Value.Equals(diff_b[j].Value))
-                                            indices_to_delete_b.Add(j);
+                                            diff_b.RemoveAt(j--);
                                         else
                                             conflicts.Add("A && B are inserting text at the same location.");
                                     break;
@@ -171,7 +171,7 @@ namespace DeadDog.Merging
                                     // Insert actions at the same location as Move destinations collide unless the text is the same
                                     if (diff_a[i].Position == diff_b[j].Position)
                                         if (diff_a[i].Value.Equals((diff_b[j] as Move<char[]>).Value2))
-                                            indices_to_delete_a.Add(i);
+                                            diff_a.RemoveAt(i--);
                                         else
                                             conflicts.Add("A is inserting text at the same location that B is moving text to.");
                                     break;
@@ -193,7 +193,7 @@ namespace DeadDog.Merging
                                     // Insert actions at the same location as Move destinations collide unless the text is the same
                                     if (diff_b[j].Position == diff_a[i].Position)
                                         if (diff_b[j].Value.Equals((diff_a[i] as Move<char[]>).Value2))
-                                            indices_to_delete_b.Add(j);
+                                            diff_b.RemoveAt(j--);
                                         else
                                             conflicts.Add("B is inserting text at the same location that A is moving text to.");
                                     break;
