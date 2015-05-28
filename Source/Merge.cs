@@ -131,8 +131,10 @@ namespace DeadDog.Merging
                                     if ((diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.Start < diff_a[i].Range.End) ||
                                         (diff_b[j].Range.End >= diff_a[i].Range.Start && diff_b[j].Range.End < diff_a[i].Range.End) ||
                                         (diff_b[j].Range.Start < diff_a[i].Range.Start && diff_b[j].Range.End > diff_a[i].Range.End))
+                                    {
                                         diff_a[i].Range = new Range(Math.Min(diff_a[i].Range.Start, diff_b[j].Range.Start), Math.Max(diff_a[i].Range.End, diff_b[j].Range.End));
-                                    indices_to_delete_b.Add(j);
+                                        indices_to_delete_b.Add(j);
+                                    }
                                     break;
                                 case ChangeType.Insertion:
                                     // Insert actions inside the range of Delete actions collide
