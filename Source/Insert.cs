@@ -21,6 +21,11 @@ namespace DeadDog.Merging
             this.range = range;
         }
 
+        internal override int getAncestorKey()
+        {
+            return pos;
+        }
+
         public T Value
         {
             get { return value; }

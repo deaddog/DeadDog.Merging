@@ -23,6 +23,12 @@ namespace DeadDog.Merging
             this.range = range;
         }
 
+        public static int AncestorPositionSort<T>(Change<T> a, Change<T> b)
+        {
+            return a.getAncestorKey().CompareTo(b.getAncestorKey());
+        }
+        internal abstract int getAncestorKey();
+
         public ChangeType ChangeType
         {
             get { return type; }

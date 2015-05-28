@@ -30,6 +30,11 @@ namespace DeadDog.Merging
             this.first = first;
         }
 
+        internal override int getAncestorKey()
+        {
+            return Position;
+        }
+
         public T Value2
         {
             get { return value2; }

@@ -182,24 +182,12 @@ namespace DeadDog.Merging
             // throw an error if there are conflicts
             if (conflicts.Count > 0)
                 throw new Exception("CONFLICT!");
+
             // sort the actions by position in the common ancestor
-            Func<Change<char[]>, int> sort_key = action =>
-            {
-                switch (action.ChangeType)
-                {
-                    case ChangeType.Deletion:
-                        return action.Range.Start;
-                    case ChangeType.Insertion:
-                        return action.Position;
-                    case ChangeType.Move:
-                        return action.Position;
-                    default: throw new InvalidCastException();
-                }
-            };
             List<Change<char[]>> actions = new List<Change<char[]>>();
             actions.AddRange(diff_a);
             actions.AddRange(diff_b);
-            actions.Sort((x, y) => sort_key(x).CompareTo(sort_key(y)));
+            actions.Sort(Change<char[]>.AncestorPositionSort);
 
             // compute offset lists
             var offset_changes_ab = new List<Tuple<int, int>>();
