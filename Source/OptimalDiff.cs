@@ -27,7 +27,7 @@ namespace DeadDog.Merging
             var temp = Diff(split(a), split(b));
             List<Change<T2>> n = new List<Change<T2>>();
             for (int i = 0; i < temp.Count; i++)
-                n.Add(new Change<T2>(temp[i].ChangeType, join(temp[i].Value), temp[i].Position, temp[i].Range));
+                n.Add(temp[i].Clone(join(temp[i].Value)));
             return n;
         }
 
@@ -113,7 +113,7 @@ namespace DeadDog.Merging
                     int pos_a = pos_a_old;
 
                     T[] sub = GetRange(b, r);
-                    changes.Add(new Change<T[]>(ChangeType.Insertion, sub, pos_a, r));
+                    changes.Add(new Insert<T[]>(sub, pos_a, r));
                     offset_b += length;
                 }
                 if (pos_diff >= diff.Count)
@@ -133,7 +133,7 @@ namespace DeadDog.Merging
                     int pos_b = pos_a_old + offset_b;
 
                     T[] sub = GetRange(a, r);
-                    changes.Add(new Change<T[]>(ChangeType.Deletion, sub, pos_b, r));
+                    changes.Add(new Delete<T[]>(sub, pos_b, r));
                     offset_b -= length;
                 }
             }

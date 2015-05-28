@@ -8,6 +8,11 @@ namespace DeadDog.Merging
         private int pos;
         private Range range;
 
+        public override Change<T2> Clone<T2>(T2 newValue)
+        {
+            return new Delete<T2>(newValue, this.pos, this.range);
+        }
+
         public Delete(T value, int pos, Range range)
             : base(ChangeType.Deletion, value, pos, range)
         {

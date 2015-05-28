@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class Change<T>
+    public abstract class Change<T>
     {
         private ChangeType type;
         private T value;
         private int pos;
         private Range range;
+
+        public abstract Change<T2> Clone<T2>(T2 newValue);
 
         public Change(ChangeType type, T value, int pos, Range range)
         {
