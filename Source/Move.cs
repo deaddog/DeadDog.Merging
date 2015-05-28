@@ -52,5 +52,10 @@ namespace DeadDog.Merging
         {
             get { return first; }
         }
+
+        public override string ToString()
+        {
+            return string.Format("Move(\"{0}\" -> \"{1}\")", Value, Value2);
+        }
     }
 }

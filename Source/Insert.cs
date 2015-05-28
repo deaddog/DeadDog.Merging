@@ -42,7 +42,7 @@ namespace DeadDog.Merging
 
         public override string ToString()
         {
-            return string.Format("Delete(\"{0}\", {2}, {1})", value, pos, range);
+            return string.Format("Insert(\"{0}\", {1}, {2})", value, pos, range);
         }
     }
 }
