@@ -230,8 +230,7 @@ namespace DeadDog.Merging
                 throw new Exception("CONFLICT!");
 
             // sort the actions by position in the common ancestor
-            List<IChange<char[]>> actions = new List<IChange<char[]>>(diff_a.Concat(diff_b));
-            actions.SortByPosition();
+            ChangeQueue<char[]> actions = new ChangeQueue<char[]>(diff_a, diff_b);
 
             // compute offset lists
             var offset_changes_ab = new List<Tuple<int, int>>();

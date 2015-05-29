@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class ChangeQueue
+    public class ChangeQueue<T>
     {
+        private List<IChange<T>> actions;
+
         #region Initial sorting
         private static int ancestorPositionSort<T>(IChange<T> a, IChange<T> b)
         {
@@ -27,5 +29,25 @@ namespace DeadDog.Merging
             return delete.Position1;
         }
         #endregion
+
+        public ChangeQueue(params IEnumerable<IChange<T>>[] collections)
+        {
+            actions = new List<IChange<T>>();
+
+            foreach (var c in collections)
+                actions.AddRange(c);
+
+            actions.Sort(ancestorPositionSort);
+        }
+
+        public int Count
+        {
+            get { return actions.Count; }
+        }
+
+        public IChange<T> this[int index]
+        {
+            get { return actions[index]; }
+        }
     }
 }
