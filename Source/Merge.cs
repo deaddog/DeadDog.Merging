@@ -98,41 +98,99 @@ namespace DeadDog.Merging
 
         private static void resolveConflict(Delete<char[]> a, Delete<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // if two Delete actions overlap, take the union of their ranges
+            if ((b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End) ||
+                (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End) ||
+                (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End))
+            {
+                a.Range = new Range(Math.Min(a.Range.Start, b.Range.Start), Math.Max(a.Range.End, b.Range.End));
+                cm.RemoveB = true;
+            }
         }
         private static void resolveConflict(Delete<char[]> a, Insert<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Insert actions inside the range of Delete actions collide
+            if (b.Position > a.Range.Start && b.Position < a.Range.End)
+                cm.AddConflict("A is deleting text that B is inserting into.");
         }
         private static void resolveConflict(Delete<char[]> a, Move<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
+            if (a.Range.Start >= b.Range.Start && a.Range.End <= b.Range.End)
+            { }
+            else if (a.Range.Start >= b.Range.Start && a.Range.Start < b.Range.End)
+                cm.AddConflict("B is moving only part of some text that A is deleting.");
+            else if (a.Range.End >= b.Range.Start && a.Range.End < b.Range.End)
+                cm.AddConflict("B is moving only part of some text that A is deleting.");
+            else if (a.Range.Start < b.Range.Start && a.Range.End > b.Range.End)
+                cm.AddConflict("A is deleting text that B is moving.");
+
+            // Move destinations inside the range of Delete actions collide
+            if (b.Position > a.Range.Start && b.Position < a.Range.End)
+                cm.AddConflict("A is deleting text that B is moving text into.");
         }
 
         private static void resolveConflict(Insert<char[]> a, Delete<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Insert actions inside the range of Delete actions collide
+            if (a.Position > b.Range.Start && a.Position < b.Range.End)
+                cm.AddConflict("B is deleting text that A is inserting into.");
         }
         private static void resolveConflict(Insert<char[]> a, Insert<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Insert actions at the same position collide unless the inserted text is the same
+            if (a.Position == b.Position)
+                if (a.Value.Equals(b.Value))
+                    cm.RemoveB = true;
+                else
+                    cm.AddConflict("A && B are inserting text at the same location.");
         }
         private static void resolveConflict(Insert<char[]> a, Move<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Insert actions at the same location as Move destinations collide unless the text is the same
+            if (a.Position == b.Position)
+                if (a.Value.Equals((b as Move<char[]>).Value2))
+                    cm.RemoveA = true;
+                else
+                    cm.AddConflict("A is inserting text at the same location that B is moving text to.");
         }
 
         private static void resolveConflict(Move<char[]> a, Delete<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
+            if (b.Range.Start >= a.Range.Start && b.Range.End <= a.Range.End)
+            { }
+            else if (b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End)
+                cm.AddConflict("A is moving only part of some text that B is deleting.");
+            else if (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End)
+                cm.AddConflict("A is moving only part of some text that B is deleting.");
+            else if (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End)
+                cm.AddConflict("B is deleting text that A is moving.");
         }
         private static void resolveConflict(Move<char[]> a, Insert<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // Insert actions at the same location as Move destinations collide unless the text is the same
+            if (b.Position == a.Position)
+                if (b.Value.Equals((a as Move<char[]>).Value2))
+                    cm.RemoveB = true;
+                else
+                    cm.AddConflict("B is inserting text at the same location that A is moving text to.");
         }
         private static void resolveConflict(Move<char[]> a, Move<char[]> b, ConflictManager cm)
         {
-            throw new NotImplementedException();
+            // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
+            if (b.Range.Start >= a.Range.Start && b.Range.End <= a.Range.End)
+            { }
+            else if (b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End)
+                cm.AddConflict("A text move by A overlaps with a text move by B.");
+            else if (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End)
+                cm.AddConflict("A text move by A overlaps with a text move by B.");
+            else if (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End)
+            { }
+
+            // Move actions collide if their destination positions are the same
+            if (a.Position == b.Position)
+                cm.AddConflict("A && B are moving text to the same location.");
         }
 
         #endregion
@@ -150,12 +208,6 @@ namespace DeadDog.Merging
             // find conflicts and automatically resolve them where possible
             var conflicts = new List<string>();
 
-            int len_diff_a = diff_a.Count;
-            int len_diff_b = diff_b.Count;
-
-            #region HandleCases
-
-
             for (int i = 0; i < diff_a.Count; i++)
                 for (int j = 0; j < diff_b.Count; j++)
                 {
@@ -172,108 +224,6 @@ namespace DeadDog.Merging
                         break;
                     }
                 }
-
-            for (int i = 0; i < diff_a.Count; i++)
-                for (int j = 0; j < diff_b.Count; j++)
-                {
-                    switch (diff_a[i].ChangeType)
-                    {
-                        case ChangeType.Deletion: switch (diff_b[j].ChangeType)
-                            {
-                                case ChangeType.Deletion:
-                                    // if two Delete actions overlap, take the union of their ranges
-                                    if ((diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.Start < diff_a[i].Range.End) ||
-                                        (diff_b[j].Range.End >= diff_a[i].Range.Start && diff_b[j].Range.End < diff_a[i].Range.End) ||
-                                        (diff_b[j].Range.Start < diff_a[i].Range.Start && diff_b[j].Range.End > diff_a[i].Range.End))
-                                    {
-                                        diff_a[i].Range = new Range(Math.Min(diff_a[i].Range.Start, diff_b[j].Range.Start), Math.Max(diff_a[i].Range.End, diff_b[j].Range.End));
-                                        diff_b.RemoveAt(j--);
-                                    }
-                                    break;
-                                case ChangeType.Insertion:
-                                    // Insert actions inside the range of Delete actions collide
-                                    if (diff_b[j].Position > diff_a[i].Range.Start && diff_b[j].Position < diff_a[i].Range.End)
-                                        conflicts.Add("A is deleting text that B is inserting into.");
-                                    break;
-                                case ChangeType.Move:
-                                    // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-                                    if (diff_a[i].Range.Start >= diff_b[j].Range.Start && diff_a[i].Range.End <= diff_b[j].Range.End)
-                                    { }
-                                    else if (diff_a[i].Range.Start >= diff_b[j].Range.Start && diff_a[i].Range.Start < diff_b[j].Range.End)
-                                        conflicts.Add("B is moving only part of some text that A is deleting.");
-                                    else if (diff_a[i].Range.End >= diff_b[j].Range.Start && diff_a[i].Range.End < diff_b[j].Range.End)
-                                        conflicts.Add("B is moving only part of some text that A is deleting.");
-                                    else if (diff_a[i].Range.Start < diff_b[j].Range.Start && diff_a[i].Range.End > diff_b[j].Range.End)
-                                        conflicts.Add("A is deleting text that B is moving.");
-                                    // Move destinations inside the range of Delete actions collide
-                                    if (diff_b[j].Position > diff_a[i].Range.Start && diff_b[j].Position < diff_a[i].Range.End)
-                                        conflicts.Add("A is deleting text that B is moving text into.");
-                                    break;
-                            } break;
-                        case ChangeType.Insertion: switch (diff_b[j].ChangeType)
-                            {
-                                case ChangeType.Deletion:
-                                    // Insert actions inside the range of Delete actions collide
-                                    if (diff_a[i].Position > diff_b[j].Range.Start && diff_a[i].Position < diff_b[j].Range.End)
-                                        conflicts.Add("B is deleting text that A is inserting into.");
-                                    break;
-                                case ChangeType.Insertion:
-                                    // Insert actions at the same position collide unless the inserted text is the same
-                                    if (diff_a[i].Position == diff_b[j].Position)
-                                        if (diff_a[i].Value.Equals(diff_b[j].Value))
-                                            diff_b.RemoveAt(j--);
-                                        else
-                                            conflicts.Add("A && B are inserting text at the same location.");
-                                    break;
-                                case ChangeType.Move:
-                                    // Insert actions at the same location as Move destinations collide unless the text is the same
-                                    if (diff_a[i].Position == diff_b[j].Position)
-                                        if (diff_a[i].Value.Equals((diff_b[j] as Move<char[]>).Value2))
-                                            diff_a.RemoveAt(i--);
-                                        else
-                                            conflicts.Add("A is inserting text at the same location that B is moving text to.");
-                                    break;
-                            } break;
-                        case ChangeType.Move: switch (diff_b[j].ChangeType)
-                            {
-                                case ChangeType.Deletion:
-                                    // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
-                                    if (diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.End <= diff_a[i].Range.End)
-                                    { }
-                                    else if (diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.Start < diff_a[i].Range.End)
-                                        conflicts.Add("A is moving only part of some text that B is deleting.");
-                                    else if (diff_b[j].Range.End >= diff_a[i].Range.Start && diff_b[j].Range.End < diff_a[i].Range.End)
-                                        conflicts.Add("A is moving only part of some text that B is deleting.");
-                                    else if (diff_b[j].Range.Start < diff_a[i].Range.Start && diff_b[j].Range.End > diff_a[i].Range.End)
-                                        conflicts.Add("B is deleting text that A is moving.");
-                                    break;
-                                case ChangeType.Insertion:
-                                    // Insert actions at the same location as Move destinations collide unless the text is the same
-                                    if (diff_b[j].Position == diff_a[i].Position)
-                                        if (diff_b[j].Value.Equals((diff_a[i] as Move<char[]>).Value2))
-                                            diff_b.RemoveAt(j--);
-                                        else
-                                            conflicts.Add("B is inserting text at the same location that A is moving text to.");
-                                    break;
-                                case ChangeType.Move:
-                                    // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-                                    if (diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.End <= diff_a[i].Range.End)
-                                    { }
-                                    else if (diff_b[j].Range.Start >= diff_a[i].Range.Start && diff_b[j].Range.Start < diff_a[i].Range.End)
-                                        conflicts.Add("A text move by A overlaps with a text move by B.");
-                                    else if (diff_b[j].Range.End >= diff_a[i].Range.Start && diff_b[j].Range.End < diff_a[i].Range.End)
-                                        conflicts.Add("A text move by A overlaps with a text move by B.");
-                                    else if (diff_b[j].Range.Start < diff_a[i].Range.Start && diff_b[j].Range.End > diff_a[i].Range.End)
-                                    { }
-                                    // Move actions collide if their destination positions are the same
-                                    if (diff_a[i].Position == diff_b[j].Position)
-                                        conflicts.Add("A && B are moving text to the same location.");
-                                    break;
-                            } break;
-                    }
-                }
-
-            #endregion
 
             // throw an error if there are conflicts
             if (conflicts.Count > 0)
