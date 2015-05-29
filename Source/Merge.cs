@@ -36,27 +36,26 @@ namespace DeadDog.Merging
         // by less than MAX_MOVE_DIST in terms of normalized Levenshtein distance
         public static void find_moves<K>(List<Change<K[]>> diff, bool first)
         {
-            List<int> indices_to_delete = new List<int>();
+            diff.Sort((x, y) => x.ChangeType == y.ChangeType ? 0 : (x.ChangeType == ChangeType.Deletion ? -1 : 1));
+            int firstInsert = diff.FindIndex(x => x.ChangeType == ChangeType.Insertion);
+            int count = diff.Count;
 
-            for (int i = 0; i < diff.Count; i++)
-                if (diff[i].ChangeType == ChangeType.Deletion)
-                    for (int j = 0; j < diff.Count; j++)
-                        if (diff[j].ChangeType == ChangeType.Insertion)
-                            if (!indices_to_delete.Contains(i) && !indices_to_delete.Contains(j))
-                            {
-                                double normalized_dist = leventhian(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
-                                if (normalized_dist >= MAX_MOVE_DIST && Math.Max(diff[i].Value.Length, diff[j].Value.Length) >= MIN_MOVE_LENGTH)
-                                {
-                                    indices_to_delete.Add(i);
-                                    indices_to_delete.Add(j);
+            for (int i = 0; i < firstInsert; i++)
+                for (int j = firstInsert; j < count; j++)
+                {
+                    double normalized_dist = leventhian(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
+                    if (normalized_dist >= MAX_MOVE_DIST && Math.Max(diff[i].Value.Length, diff[j].Value.Length) >= MIN_MOVE_LENGTH)
+                    {
+                        diff.Add(new Move<K[]>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
 
-                                    diff.Add(new Move<K[]>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
-                                }
-                            }
-            indices_to_delete.Sort();
-            indices_to_delete.Reverse();
-            foreach (var i in indices_to_delete)
-                diff.RemoveAt(i);
+                        diff.RemoveAt(i--);
+                        diff.RemoveAt(j--);
+                        firstInsert--;
+                        count -= 2;
+
+                        break;
+                    }
+                }
         }
 
         public static string merge(string ancestor, string a, string b)
