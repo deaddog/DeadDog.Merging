@@ -2,28 +2,26 @@
 
 namespace DeadDog.Merging
 {
-    public class Delete<T> : Change<T>
+    public class Delete<T> : IChange<T>
     {
         private T value;
         private int pos;
         private Range range;
 
-        public override Change<T2> Clone<T2>(T2 newValue)
+        public Delete<T2> Clone<T2>(T2 newValue)
         {
             return new Delete<T2>(newValue, this.pos, this.range);
         }
+        IChange<T2> IChange<T>.Clone<T2>(T2 newValue)
+        {
+            return this.Clone(newValue);
+        }
 
         public Delete(T value, int pos, Range range)
-            : base(ChangeType.Deletion, value, pos, range)
         {
             this.value = value;
             this.pos = pos;
             this.range = range;
-        }
-
-        internal override int getAncestorKey()
-        {
-            return range.Start;
         }
 
         public T Value
