@@ -44,7 +44,6 @@
     <Compile Include="ChangeType.cs" />
     <Compile Include="Delete.cs" />
     <Compile Include="Difference.cs" />
-    <Compile Include="IChangeExtension.cs" />
     <Compile Include="Insert.cs" />
     <Compile Include="Merge.cs" />
     <Compile Include="Move.cs" />
