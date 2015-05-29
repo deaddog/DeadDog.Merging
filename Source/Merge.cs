@@ -58,6 +58,85 @@ namespace DeadDog.Merging
                 }
         }
 
+        #region Methods for handling different possible conflict cases
+
+        private class ConflictManager
+        {
+            private bool removeA;
+            private bool removeB;
+            private List<string> conflicts;
+
+            public ConflictManager()
+            {
+                this.removeA = false;
+                this.removeB = false;
+                this.conflicts = new List<string>();
+            }
+
+            public bool RemoveA
+            {
+                get { return removeA; }
+                set { removeA = value; }
+            }
+            public bool RemoveB
+            {
+                get { return removeA; }
+                set { removeA = value; }
+            }
+
+            public void AddConflict(string conflict)
+            {
+                this.conflicts.Add(conflict);
+            }
+
+            public IEnumerable<string> GetConflicts()
+            {
+                foreach (var c in conflicts)
+                    yield return c;
+            }
+        }
+
+        private static void resolveConflict(Delete<char[]> a, Delete<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Delete<char[]> a, Insert<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Delete<char[]> a, Move<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void resolveConflict(Insert<char[]> a, Delete<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Insert<char[]> a, Insert<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Insert<char[]> a, Move<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void resolveConflict(Move<char[]> a, Delete<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Move<char[]> a, Insert<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+        private static void resolveConflict(Move<char[]> a, Move<char[]> b, ConflictManager cm)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
         public static string merge(string ancestor, string a, string b)
         {
             // compute the diffs from the common ancestor
@@ -75,6 +154,24 @@ namespace DeadDog.Merging
             int len_diff_b = diff_b.Count;
 
             #region HandleCases
+
+
+            for (int i = 0; i < diff_a.Count; i++)
+                for (int j = 0; j < diff_b.Count; j++)
+                {
+                    ConflictManager cm = new ConflictManager();
+                    resolveConflict((dynamic)diff_a[i], (dynamic)diff_b[j], cm);
+
+                    conflicts.AddRange(cm.GetConflicts());
+
+                    if (cm.RemoveB)
+                        diff_b.RemoveAt(j--);
+                    if (cm.RemoveA)
+                    {
+                        diff_a.RemoveAt(i--);
+                        break;
+                    }
+                }
 
             for (int i = 0; i < diff_a.Count; i++)
                 for (int j = 0; j < diff_b.Count; j++)
