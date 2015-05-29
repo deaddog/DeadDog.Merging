@@ -197,38 +197,9 @@ namespace DeadDog.Merging
                 if (actions[i].ChangeType == ChangeType.Insertion)
                     offset_changes_ab.Add(Tuple.Create(actions[i].Position, actions[i].Value.Length));
             }
-            var offset_changes_a = new List<Tuple<int, int>>();
-            for (int i = 0; i < diff_a.Count; i++)
-                switch (diff_a[i].ChangeType)
-                {
-                    case ChangeType.Deletion:
-                        offset_changes_a.Add(Tuple.Create(diff_a[i].Range.Start, diff_a[i].Range.Start - diff_a[i].Range.End));
-                        break;
-                    case ChangeType.Insertion:
-                        offset_changes_a.Add(Tuple.Create(diff_a[i].Position, diff_a[i].Value.Length));
-                        break;
-                    case ChangeType.Move:
-                        offset_changes_a.Add(Tuple.Create(diff_a[i].Range.Start, diff_a[i].Range.Start - diff_a[i].Range.End));
-                        offset_changes_a.Add(Tuple.Create(diff_a[i].Position, diff_a[i].Value.Length));
-                        break;
-                }
-            var offset_changes_b = new List<Tuple<int, int>>();
-            for (int i = 0; i < diff_b.Count; i++)
-                switch (diff_b[i].ChangeType)
-                {
-                    case ChangeType.Deletion:
-                        offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
-                        break;
-                    case ChangeType.Insertion:
-                        offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
-                        break;
-                    case ChangeType.Move:
-                        {
-                            offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
-                            offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
-                        }
-                        break;
-                }
+
+            var offset_changes_a = getOffsetChanges(diff_a);
+            var offset_changes_b = getOffsetChanges(diff_b);
 
             // compute the preliminary merge
             string preliminary_merge = (string)ancestor.Clone();
@@ -312,6 +283,28 @@ namespace DeadDog.Merging
                     preliminary_merge = preliminary_merge.Substring(0, pos_a) + text + preliminary_merge.Substring(pos_a);
                 }
             return preliminary_merge;
+        }
+
+        private static List<Tuple<int, int>> getOffsetChanges(List<Change<char[]>> diff_b)
+        {
+            var offset_changes_b = new List<Tuple<int, int>>();
+            for (int i = 0; i < diff_b.Count; i++)
+                switch (diff_b[i].ChangeType)
+                {
+                    case ChangeType.Deletion:
+                        offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
+                        break;
+                    case ChangeType.Insertion:
+                        offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
+                        break;
+                    case ChangeType.Move:
+                        {
+                            offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
+                            offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
+                        }
+                        break;
+                }
+            return offset_changes_b;
         }
     }
 }
