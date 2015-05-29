@@ -16,16 +16,16 @@ namespace DeadDog.Merging
             this.b = b;
         }
 
-        public static List<Change<T[]>> Diff(IEnumerable<T> a, IEnumerable<T> b)
+        public static List<IChange<T[]>> Diff(IEnumerable<T> a, IEnumerable<T> b)
         {
             var od = new OptimalDiff<T>(a.ToArray(), b.ToArray());
             return od.str_diff();
         }
 
-        public static List<Change<T2>> Diff<T2>(T2 a, T2 b, Func<T2, IEnumerable<T>> split, Func<T[], T2> join)
+        public static List<IChange<T2>> Diff<T2>(T2 a, T2 b, Func<T2, IEnumerable<T>> split, Func<T[], T2> join)
         {
             var temp = Diff(split(a), split(b));
-            List<Change<T2>> n = new List<Change<T2>>();
+            List<IChange<T2>> n = new List<IChange<T2>>();
             for (int i = 0; i < temp.Count; i++)
                 n.Add(temp[i].Clone(join(temp[i].Value)));
             return n;
@@ -86,12 +86,12 @@ namespace DeadDog.Merging
             return operations;
         }
 
-        private List<Change<T[]>> str_diff()
+        private List<IChange<T[]>> str_diff()
         {
             var diff = min_diff();
             diff.Sort((x, y) => x.Item1.CompareTo(y.Item1));
 
-            var changes = new List<Change<T[]>>();
+            var changes = new List<IChange<T[]>>();
             int pos_diff = 0;
             int offset_b = 0;
 

@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public delegate IEnumerable<Change<T>> Diff<T>(IEnumerable<T> a, IEnumerable<T> b);
+    public delegate IEnumerable<IChange<T>> Diff<T>(IEnumerable<T> a, IEnumerable<T> b);
 }

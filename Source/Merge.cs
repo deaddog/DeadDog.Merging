@@ -34,10 +34,10 @@ namespace DeadDog.Merging
         // find Move actions in a list of Change objects (mutates the input list).
         // a Move action comes from an Insert-Delete pair where the strings differ
         // by less than MAX_MOVE_DIST in terms of normalized Levenshtein distance
-        public static void find_moves<K>(List<Change<K[]>> diff, bool first)
+        public static void find_moves<K>(List<IChange<K[]>> diff, bool first)
         {
-            diff.Sort((x, y) => x.ChangeType == y.ChangeType ? 0 : (x.ChangeType == ChangeType.Deletion ? -1 : 1));
-            int firstInsert = diff.FindIndex(x => x.ChangeType == ChangeType.Insertion);
+            diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K[]> ? -1 : 1));
+            int firstInsert = diff.FindIndex(x => x is Insert<K[]>);
             int count = diff.Count;
 
             for (int i = 0; i < firstInsert; i++)
@@ -116,17 +116,17 @@ namespace DeadDog.Merging
         private static void resolveConflict(Delete<char[]> a, Move<char[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-            if (a.Range.Start >= b.Range.Start && a.Range.End <= b.Range.End)
+            if (a.Range.Start >= b.Range1.Start && a.Range.End <= b.Range1.End)
             { }
-            else if (a.Range.Start >= b.Range.Start && a.Range.Start < b.Range.End)
+            else if (a.Range.Start >= b.Range1.Start && a.Range.Start < b.Range1.End)
                 cm.AddConflict("B is moving only part of some text that A is deleting.");
-            else if (a.Range.End >= b.Range.Start && a.Range.End < b.Range.End)
+            else if (a.Range.End >= b.Range1.Start && a.Range.End < b.Range1.End)
                 cm.AddConflict("B is moving only part of some text that A is deleting.");
-            else if (a.Range.Start < b.Range.Start && a.Range.End > b.Range.End)
+            else if (a.Range.Start < b.Range1.Start && a.Range.End > b.Range1.End)
                 cm.AddConflict("A is deleting text that B is moving.");
 
             // Move destinations inside the range of Delete actions collide
-            if (b.Position > a.Range.Start && b.Position < a.Range.End)
+            if (b.Position1 > a.Range.Start && b.Position1 < a.Range.End)
                 cm.AddConflict("A is deleting text that B is moving text into.");
         }
 
@@ -148,7 +148,7 @@ namespace DeadDog.Merging
         private static void resolveConflict(Insert<char[]> a, Move<char[]> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
-            if (a.Position == b.Position)
+            if (a.Position == b.Position1)
                 if (a.Value.Equals((b as Move<char[]>).Value2))
                     cm.RemoveA = true;
                 else
@@ -158,19 +158,19 @@ namespace DeadDog.Merging
         private static void resolveConflict(Move<char[]> a, Delete<char[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
-            if (b.Range.Start >= a.Range.Start && b.Range.End <= a.Range.End)
+            if (b.Range.Start >= a.Range1.Start && b.Range.End <= a.Range1.End)
             { }
-            else if (b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End)
+            else if (b.Range.Start >= a.Range1.Start && b.Range.Start < a.Range1.End)
                 cm.AddConflict("A is moving only part of some text that B is deleting.");
-            else if (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End)
+            else if (b.Range.End >= a.Range1.Start && b.Range.End < a.Range1.End)
                 cm.AddConflict("A is moving only part of some text that B is deleting.");
-            else if (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End)
+            else if (b.Range.Start < a.Range1.Start && b.Range.End > a.Range1.End)
                 cm.AddConflict("B is deleting text that A is moving.");
         }
         private static void resolveConflict(Move<char[]> a, Insert<char[]> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
-            if (b.Position == a.Position)
+            if (b.Position == a.Position1)
                 if (b.Value.Equals((a as Move<char[]>).Value2))
                     cm.RemoveB = true;
                 else
@@ -179,17 +179,17 @@ namespace DeadDog.Merging
         private static void resolveConflict(Move<char[]> a, Move<char[]> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-            if (b.Range.Start >= a.Range.Start && b.Range.End <= a.Range.End)
+            if (b.Range1.Start >= a.Range1.Start && b.Range1.End <= a.Range1.End)
             { }
-            else if (b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End)
+            else if (b.Range1.Start >= a.Range1.Start && b.Range1.Start < a.Range1.End)
                 cm.AddConflict("A text move by A overlaps with a text move by B.");
-            else if (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End)
+            else if (b.Range1.End >= a.Range1.Start && b.Range1.End < a.Range1.End)
                 cm.AddConflict("A text move by A overlaps with a text move by B.");
-            else if (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End)
+            else if (b.Range1.Start < a.Range1.Start && b.Range1.End > a.Range1.End)
             { }
 
             // Move actions collide if their destination positions are the same
-            if (a.Position == b.Position)
+            if (a.Position1 == b.Position1)
                 cm.AddConflict("A && B are moving text to the same location.");
         }
 
@@ -230,18 +230,18 @@ namespace DeadDog.Merging
                 throw new Exception("CONFLICT!");
 
             // sort the actions by position in the common ancestor
-            List<Change<char[]>> actions = new List<Change<char[]>>();
+            List<IChange<char[]>> actions = new List<IChange<char[]>>();
             actions.AddRange(diff_a);
             actions.AddRange(diff_b);
-            actions.Sort(Change<char[]>.AncestorPositionSort);
+            actions.SortByPosition();
 
             // compute offset lists
             var offset_changes_ab = new List<Tuple<int, int>>();
             for (int i = 0; i < actions.Count; i++)
             {
-                if (actions[i].ChangeType == ChangeType.Deletion)
+                if (actions[i] is Delete<char[]>)
                     offset_changes_ab.Add(Tuple.Create(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End));
-                if (actions[i].ChangeType == ChangeType.Insertion)
+                else if (actions[i] is Insert<char[]>)
                     offset_changes_ab.Add(Tuple.Create(actions[i].Position, actions[i].Value.Length));
             }
 
@@ -253,13 +253,13 @@ namespace DeadDog.Merging
             int pos_offset = 0;
             for (int i = 0; i < actions.Count; i++)
             {
-                if (actions[i].ChangeType == ChangeType.Deletion)
+                if (actions[i] is Delete<char[]>)
                 {
                     preliminary_merge = preliminary_merge.Substring(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Substring(actions[i].Range.End + pos_offset);
                     pos_offset += actions[i].Range.Start - actions[i].Range.End;
                     offset_changes_ab.Add(Tuple.Create(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End));
                 }
-                if (actions[i].ChangeType == ChangeType.Insertion)
+                else if (actions[i] is Insert<char[]>)
                 {
                     preliminary_merge = preliminary_merge.Substring(0, actions[i].Position + pos_offset) + new string(actions[i].Value) + preliminary_merge.Substring(actions[i].Position + pos_offset);
                     pos_offset += actions[i].Value.Length;
@@ -269,7 +269,7 @@ namespace DeadDog.Merging
 
             // perform the "delete" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i].ChangeType == ChangeType.Move)
+                if (actions[i] is Move<char[]>)
                 {
                     int range_a0 = actions[i].Range.Start;
                     int range_a1 = actions[i].Range.End;
@@ -286,7 +286,7 @@ namespace DeadDog.Merging
 
             // perform the "add" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i].ChangeType == ChangeType.Move)
+                if (actions[i] is Move<char[]>)
                 {
                     var m = actions[i] as Move<char[]>;
                     int pos_a = actions[i].Position;
@@ -300,8 +300,8 @@ namespace DeadDog.Merging
                     if (m.First)
                     {
                         text_a = m.Value2;
-                        var range_a0 = m.Range.Start;
-                        var range_a1 = m.Range.End;
+                        var range_a0 = m.Range1.Start;
+                        var range_a1 = m.Range1.End;
                         foreach (var offset_pair in offset_changes_b)
                         {
                             if (offset_pair.Item1 <= actions[i].Range.Start)
@@ -332,25 +332,16 @@ namespace DeadDog.Merging
             return preliminary_merge;
         }
 
-        private static List<Tuple<int, int>> getOffsetChanges(List<Change<char[]>> diff_b)
+        private static List<Tuple<int, int>> getOffsetChanges(List<IChange<char[]>> diff_b)
         {
             var offset_changes_b = new List<Tuple<int, int>>();
             for (int i = 0; i < diff_b.Count; i++)
-                switch (diff_b[i].ChangeType)
-                {
-                    case ChangeType.Deletion:
-                        offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
-                        break;
-                    case ChangeType.Insertion:
-                        offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
-                        break;
-                    case ChangeType.Move:
-                        {
-                            offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
-                            offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
-                        }
-                        break;
-                }
+            {
+                if (!(diff_b[i] is Insert<char[]>))
+                    offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
+                if (!(diff_b[i] is Delete<char[]>))
+                    offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
+            }
             return offset_changes_b;
         }
     }
