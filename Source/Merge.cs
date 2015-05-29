@@ -80,8 +80,8 @@ namespace DeadDog.Merging
             }
             public bool RemoveB
             {
-                get { return removeA; }
-                set { removeA = value; }
+                get { return removeB; }
+                set { removeB = value; }
             }
 
             public void AddConflict(string conflict)
