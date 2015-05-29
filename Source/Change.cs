@@ -46,18 +46,5 @@ namespace DeadDog.Merging
             get { return range; }
             set { range = value; }
         }
-
-        public override string ToString()
-        {
-            string format = base.ToString();
-
-            switch(type)
-            {
-                case ChangeType.Deletion: format = "Delete(\"{0}\", {2}, {1})"; break;
-                case ChangeType.Insertion: format = "Insert(\"{0}\", {1}, {2})"; break;
-            }
-
-            return string.Format(format, value, pos, range);
-        }
     }
 }
