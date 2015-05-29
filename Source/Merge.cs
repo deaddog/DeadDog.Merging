@@ -330,17 +330,17 @@ namespace DeadDog.Merging
             return preliminary_merge;
         }
 
-        private static List<Tuple<int, int>> getOffsetChanges(List<IChange<char[]>> diff_b)
+        private static List<Tuple<int, int>> getOffsetChanges(List<IChange<char[]>> diff_list)
         {
-            var offset_changes_b = new List<Tuple<int, int>>();
-            for (int i = 0; i < diff_b.Count; i++)
+            var offset_changes = new List<Tuple<int, int>>();
+            for (int i = 0; i < diff_list.Count; i++)
             {
-                if (!(diff_b[i] is Insert<char[]>))
-                    offset_changes_b.Add(Tuple.Create(diff_b[i].Range.Start, diff_b[i].Range.Start - diff_b[i].Range.End));
-                if (!(diff_b[i] is Delete<char[]>))
-                    offset_changes_b.Add(Tuple.Create(diff_b[i].Position, diff_b[i].Value.Length));
+                if (!(diff_list[i] is Insert<char[]>))
+                    offset_changes.Add(Tuple.Create(diff_list[i].Range.Start, diff_list[i].Range.Start - diff_list[i].Range.End));
+                if (!(diff_list[i] is Delete<char[]>))
+                    offset_changes.Add(Tuple.Create(diff_list[i].Position, diff_list[i].Value.Length));
             }
-            return offset_changes_b;
+            return offset_changes;
         }
     }
 }
