@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="ArrayExtension.cs" />
     <Compile Include="ChangeQueue.cs" />
+    <Compile Include="EditDistance.cs" />
     <Compile Include="IChange.cs" />
     <Compile Include="ChangeType.cs" />
     <Compile Include="Delete.cs" />
