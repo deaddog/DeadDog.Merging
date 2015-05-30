@@ -47,6 +47,7 @@
     <Compile Include="Delete.cs" />
     <Compile Include="Difference.cs" />
     <Compile Include="IDiff.cs" />
+    <Compile Include="IMoveIdentifier.cs" />
     <Compile Include="Insert.cs" />
     <Compile Include="Merge.cs" />
     <Compile Include="Move.cs" />
