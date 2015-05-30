@@ -197,9 +197,13 @@ namespace DeadDog.Merging
 
         public static string merge(string ancestor, string a, string b)
         {
+            return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
+        }
+        public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
+        {
             // compute the diffs from the common ancestor
-            var diff_a = OptimalDiff<char>.Diff(ancestor, a);
-            var diff_b = OptimalDiff<char>.Diff(ancestor, b);
+            var diff_a = OptimalDiff<T>.Diff(ancestor, a);
+            var diff_b = OptimalDiff<T>.Diff(ancestor, b);
 
             // find Move actions
             find_moves(diff_a, true);
@@ -230,7 +234,7 @@ namespace DeadDog.Merging
                 throw new Exception("CONFLICT!");
 
             // sort the actions by position in the common ancestor
-            ChangeQueue<char[]> actions = new ChangeQueue<char[]>(diff_a, diff_b);
+            ChangeQueue<T[]> actions = new ChangeQueue<T[]>(diff_a, diff_b);
 
             // compute offset lists
             var offset_changes_ab = Offset.ConstructNoMove(actions);
@@ -238,17 +242,17 @@ namespace DeadDog.Merging
             var offset_changes_b = Offset.Construct(diff_b);
 
             // compute the preliminary merge
-            string preliminary_merge = (string)ancestor.Clone();
+            T[] preliminary_merge = (T[])ancestor.Clone();
             int pos_offset = 0;
             for (int i = 0; i < actions.Count; i++)
             {
-                if (actions[i] is Delete<char[]>)
+                if (actions[i] is Delete<T[]>)
                 {
                     preliminary_merge = preliminary_merge.Substring(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Substring(actions[i].Range.End + pos_offset);
                     pos_offset += actions[i].Range.Start - actions[i].Range.End;
                     offset_changes_ab.AddOffset(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End);
                 }
-                else if (actions[i] is Insert<char[]>)
+                else if (actions[i] is Insert<T[]>)
                 {
                     preliminary_merge = preliminary_merge.Substring(0, actions[i].Position + pos_offset) + new string(actions[i].Value) + preliminary_merge.Substring(actions[i].Position + pos_offset);
                     pos_offset += actions[i].Value.Length;
@@ -258,7 +262,7 @@ namespace DeadDog.Merging
 
             // perform the "delete" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i] is Move<char[]>)
+                if (actions[i] is Move<T[]>)
                 {
                     int range_a0 = offset_changes_ab.OffsetPosition(actions[i].Range.Start);
                     int range_a1 = offset_changes_ab.OffsetPosition(actions[i].Range.End);
@@ -269,12 +273,12 @@ namespace DeadDog.Merging
 
             // perform the "add" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i] is Move<char[]>)
+                if (actions[i] is Move<T[]>)
                 {
-                    var m = actions[i] as Move<char[]>;
+                    var m = actions[i] as Move<T[]>;
                     int pos_a = offset_changes_ab.OffsetPosition(actions[i].Position);
                     var text_ancestor = actions[i].Value;
-                    char[] text_a, text_b;
+                    T[] text_a, text_b;
                     if (m.First)
                     {
                         text_a = m.Value2;
