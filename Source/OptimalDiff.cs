@@ -17,76 +17,21 @@ namespace DeadDog.Merging
             return str_diff(origin.ToArray(), modified.ToArray());
         }
 
-        private List<Tuple<int, ChangeType>> min_diff(T[] a, T[] b)
-        {
-            int[,] d3 = get_operations(a, b);
-            List<Tuple<int, ChangeType>> changes = new List<Tuple<int, ChangeType>>();
-            int si = 0, fi = 0;
-            int ls = a.Length, lf = b.Length;
-
-            while (si != a.Length || fi != b.Length)
-            {
-                if (si == a.Length)
-                {
-                    changes.Add(Tuple.Create(si, ChangeType.Insertion));
-                    fi++;
-                }
-                else if (fi == b.Length)
-                {
-                    changes.Add(Tuple.Create(si, ChangeType.Deletion));
-                    si++;
-                }
-                else if (a[si].Equals(b[fi]))
-                { si++; fi++; }
-                else if (d3[si + 1, fi] <= d3[si, fi + 1])
-                {
-                    changes.Add(Tuple.Create(si, ChangeType.Deletion));
-                    si++;
-                }
-                else
-                {
-                    changes.Add(Tuple.Create(si, ChangeType.Insertion));
-                    fi++;
-                }
-            }
-            return changes;
-        }
-
-        private int[,] get_operations(T[] a, T[] b)
-        {
-            int[,] operations = new int[a.Length + 1, b.Length + 1];
-
-            for (int i = 0; i <= a.Length; i++)
-                operations[i, b.Length] = a.Length - i;
-            for (int i = 0; i <= b.Length; i++)
-                operations[a.Length, i] = b.Length - i;
-
-            for (int j = b.Length - 1; j >= 0; j--)
-                for (int i = a.Length - 1; i >= 0; i--)
-                {
-                    if (a[i].Equals(b[j]))
-                        operations[i, j] = operations[i + 1, j + 1];
-                    else
-                        operations[i, j] = Math.Min(operations[i + 1, j] + 1, operations[i, j + 1] + 1);
-                }
-            return operations;
-        }
-
         private List<IChange<T[]>> str_diff(T[] a, T[] b)
         {
-            var diff = min_diff(a, b);
-            diff.Sort((x, y) => x.Item1.CompareTo(y.Item1));
+            var diff = EditDistance.GetOperations(a, b);
+            Array.Sort(diff, (x, y) => x.Item1.CompareTo(y.Item1));
 
             var changes = new List<IChange<T[]>>();
             int pos_diff = 0;
             int offset_b = 0;
 
-            while (pos_diff < diff.Count)
+            while (pos_diff < diff.Length)
             {
                 int length = 0;
                 int pos_a_old = diff[pos_diff].Item1;
 
-                while (pos_diff < diff.Count && diff[pos_diff].Item2 == ChangeType.Insertion)
+                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Insertion)
                 {
                     if (diff[pos_diff].Item1 != pos_a_old)
                         break;
@@ -102,11 +47,11 @@ namespace DeadDog.Merging
                     changes.Add(new Insert<T[]>(sub, pos_a, r));
                     offset_b += length;
                 }
-                if (pos_diff >= diff.Count)
+                if (pos_diff >= diff.Length)
                     break;
                 length = 0;
                 pos_a_old = diff[pos_diff].Item1;
-                while (pos_diff < diff.Count && diff[pos_diff].Item2 == ChangeType.Deletion)
+                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Deletion)
                 {
                     if (diff[pos_diff].Item1 != pos_a_old + length)
                         break;
