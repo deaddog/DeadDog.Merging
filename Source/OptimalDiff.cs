@@ -22,15 +22,6 @@ namespace DeadDog.Merging
             return od.str_diff();
         }
 
-        public static List<IChange<T2>> Diff<T2>(T2 a, T2 b, Func<T2, IEnumerable<T>> split, Func<T[], T2> join)
-        {
-            var temp = Diff(split(a), split(b));
-            List<IChange<T2>> n = new List<IChange<T2>>();
-            for (int i = 0; i < temp.Count; i++)
-                n.Add(temp[i].Clone(join(temp[i].Value)));
-            return n;
-        }
-
         private List<Tuple<int, ChangeType>> min_diff()
         {
             int[,] d3 = get_operations();
