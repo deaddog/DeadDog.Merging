@@ -6,25 +6,20 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class OptimalDiff<T> where T : IEquatable<T>
+    public class OptimalDiff<T> : IDiff<T> where T : IEquatable<T>
     {
-        private T[] a, b;
-
-        private OptimalDiff(T[] a, T[] b)
+        public OptimalDiff()
         {
-            this.a = a;
-            this.b = b;
         }
 
-        public static List<IChange<T[]>> Diff(IEnumerable<T> a, IEnumerable<T> b)
+        public IEnumerable<IChange<T[]>> Diff(IEnumerable<T> origin, IEnumerable<T> modified)
         {
-            var od = new OptimalDiff<T>(a.ToArray(), b.ToArray());
-            return od.str_diff();
+            return str_diff(origin.ToArray(), modified.ToArray());
         }
 
-        private List<Tuple<int, ChangeType>> min_diff()
+        private List<Tuple<int, ChangeType>> min_diff(T[] a, T[] b)
         {
-            int[,] d3 = get_operations();
+            int[,] d3 = get_operations(a, b);
             List<Tuple<int, ChangeType>> changes = new List<Tuple<int, ChangeType>>();
             int si = 0, fi = 0;
             int ls = a.Length, lf = b.Length;
@@ -57,7 +52,7 @@ namespace DeadDog.Merging
             return changes;
         }
 
-        private int[,] get_operations()
+        private int[,] get_operations(T[] a, T[] b)
         {
             int[,] operations = new int[a.Length + 1, b.Length + 1];
 
@@ -77,9 +72,9 @@ namespace DeadDog.Merging
             return operations;
         }
 
-        private List<IChange<T[]>> str_diff()
+        private List<IChange<T[]>> str_diff(T[] a, T[] b)
         {
-            var diff = min_diff();
+            var diff = min_diff(a, b);
             diff.Sort((x, y) => x.Item1.CompareTo(y.Item1));
 
             var changes = new List<IChange<T[]>>();
@@ -131,5 +126,6 @@ namespace DeadDog.Merging
 
             return changes;
         }
+
     }
 }
