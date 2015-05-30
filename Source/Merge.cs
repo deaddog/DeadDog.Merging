@@ -8,22 +8,6 @@ namespace DeadDog.Merging
 {
     public class Merge
     {
-        public static int leventhian<T>(T[] a, T[] b)
-        {
-            int[,] d = new int[a.Length + 1, b.Length + 1];
-            for (int i = 0; i <= a.Length; i++)
-                d[i, 0] = i;
-            for (int i = 0; i <= b.Length; i++)
-                d[0, i] = i;
-
-            for (int j = 1; j <= b.Length; j++)
-                for (int i = 1; i <= a.Length; i++)
-                    if (a[i - 1].Equals(b[j - 1]))
-                        d[i, j] = d[i - 1, j - 1];
-                    else
-                        d[i, j] = Math.Min(Math.Min(d[i - 1, j], d[i, j - 1]), d[i - 1, j - 1]) + 1;
-            return d[a.Length, b.Length];
-        }
         // the maximum normalized distance (0-1) between two strings for them to be considered the same
         // for the purposes of finding Move actions
         const double MAX_MOVE_DIST = 0.2;
@@ -34,7 +18,7 @@ namespace DeadDog.Merging
         // find Move actions in a list of Change objects (mutates the input list).
         // a Move action comes from an Insert-Delete pair where the strings differ
         // by less than MAX_MOVE_DIST in terms of normalized Levenshtein distance
-        public static void find_moves<K>(List<IChange<K[]>> diff, bool first)
+        public static void find_moves<K>(List<IChange<K[]>> diff, bool first) where K : IEquatable<K>
         {
             diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K[]> ? -1 : 1));
             int firstInsert = diff.FindIndex(x => x is Insert<K[]>);
@@ -43,7 +27,7 @@ namespace DeadDog.Merging
             for (int i = 0; i < firstInsert; i++)
                 for (int j = firstInsert; j < count; j++)
                 {
-                    double normalized_dist = leventhian(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
+                    double normalized_dist = EditDistance.GetDistance(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
                     if (normalized_dist >= MAX_MOVE_DIST && Math.Max(diff[i].Value.Length, diff[j].Value.Length) >= MIN_MOVE_LENGTH)
                     {
                         diff.Add(new Move<K[]>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
