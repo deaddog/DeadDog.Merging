@@ -233,15 +233,7 @@ namespace DeadDog.Merging
             ChangeQueue<char[]> actions = new ChangeQueue<char[]>(diff_a, diff_b);
 
             // compute offset lists
-            var offset_changes_ab = new List<Tuple<int, int>>();
-            for (int i = 0; i < actions.Count; i++)
-            {
-                if (actions[i] is Delete<char[]>)
-                    offset_changes_ab.Add(Tuple.Create(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End));
-                else if (actions[i] is Insert<char[]>)
-                    offset_changes_ab.Add(Tuple.Create(actions[i].Position, actions[i].Value.Length));
-            }
-
+            var offset_changes_ab = Offset.ConstructNoMove(actions);
             var offset_changes_a = Offset.Construct(diff_a);
             var offset_changes_b = Offset.Construct(diff_b);
 

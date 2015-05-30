@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class ChangeQueue<T>
+    public class ChangeQueue<T> : IEnumerable<IChange<T>>
     {
         private List<IChange<T>> actions;
 
@@ -48,6 +48,17 @@ namespace DeadDog.Merging
         public IChange<T> this[int index]
         {
             get { return actions[index]; }
+        }
+
+        IEnumerator<IChange<T>> IEnumerable<IChange<T>>.GetEnumerator()
+        {
+            foreach (var c in actions)
+                yield return c;
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            foreach (var c in actions)
+                yield return c;
         }
     }
 }
