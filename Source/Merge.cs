@@ -96,7 +96,7 @@ namespace DeadDog.Merging
             }
         }
 
-        private static void resolveConflict(Delete<char[]> a, Delete<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // if two Delete actions overlap, take the union of their ranges
             if ((b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End) ||
@@ -107,13 +107,13 @@ namespace DeadDog.Merging
                 cm.RemoveB = true;
             }
         }
-        private static void resolveConflict(Delete<char[]> a, Insert<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
             if (b.Position > a.Range.Start && b.Position < a.Range.End)
                 cm.AddConflict("A is deleting text that B is inserting into.");
         }
-        private static void resolveConflict(Delete<char[]> a, Move<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
             if (a.Range.Start >= b.Range1.Start && a.Range.End <= b.Range1.End)
@@ -130,13 +130,13 @@ namespace DeadDog.Merging
                 cm.AddConflict("A is deleting text that B is moving text into.");
         }
 
-        private static void resolveConflict(Insert<char[]> a, Delete<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
             if (a.Position > b.Range.Start && a.Position < b.Range.End)
                 cm.AddConflict("B is deleting text that A is inserting into.");
         }
-        private static void resolveConflict(Insert<char[]> a, Insert<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
             // Insert actions at the same position collide unless the inserted text is the same
             if (a.Position == b.Position)
@@ -145,7 +145,7 @@ namespace DeadDog.Merging
                 else
                     cm.AddConflict("A && B are inserting text at the same location.");
         }
-        private static void resolveConflict(Insert<char[]> a, Move<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (a.Position == b.Position1)
@@ -155,7 +155,7 @@ namespace DeadDog.Merging
                     cm.AddConflict("A is inserting text at the same location that B is moving text to.");
         }
 
-        private static void resolveConflict(Move<char[]> a, Delete<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
             if (b.Range.Start >= a.Range1.Start && b.Range.End <= a.Range1.End)
@@ -167,7 +167,7 @@ namespace DeadDog.Merging
             else if (b.Range.Start < a.Range1.Start && b.Range.End > a.Range1.End)
                 cm.AddConflict("B is deleting text that A is moving.");
         }
-        private static void resolveConflict(Move<char[]> a, Insert<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (b.Position == a.Position1)
@@ -176,7 +176,7 @@ namespace DeadDog.Merging
                 else
                     cm.AddConflict("B is inserting text at the same location that A is moving text to.");
         }
-        private static void resolveConflict(Move<char[]> a, Move<char[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
             if (b.Range1.Start >= a.Range1.Start && b.Range1.End <= a.Range1.End)
