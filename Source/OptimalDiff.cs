@@ -112,7 +112,7 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old + offset_b, length);
                     int pos_a = pos_a_old;
 
-                    T[] sub = GetRange(b, r);
+                    T[] sub = b.GetRange(r);
                     changes.Add(new Insert<T[]>(sub, pos_a, r));
                     offset_b += length;
                 }
@@ -132,21 +132,13 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old, length);
                     int pos_b = pos_a_old + offset_b;
 
-                    T[] sub = GetRange(a, r);
+                    T[] sub = a.GetRange(r);
                     changes.Add(new Delete<T[]>(sub, pos_b, r));
                     offset_b -= length;
                 }
             }
 
             return changes;
-        }
-
-        private static TArray[] GetRange<TArray>(TArray[] array, Range range)
-        {
-            TArray[] arr = new TArray[range.Length];
-            for (int i = 0; i < arr.Length; i++)
-                arr[i] = array[i + range.Start];
-            return arr;
         }
     }
 }
