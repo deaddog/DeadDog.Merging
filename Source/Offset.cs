@@ -30,5 +30,21 @@ namespace DeadDog.Merging
             }
             return pos;
         }
+
+        public static Offset Construct<T>(IEnumerable<IChange<T[]>> collection)
+        {
+            var offset_changes = new Offset();
+
+            foreach (var change in collection)
+            {
+                if (!(change is Insert<T[]>))
+                    offset_changes.AddOffset(change.Range.Start, change.Range.Start - change.Range.End);
+
+                if (!(change is Delete<T[]>))
+                    offset_changes.AddOffset(change.Position, change.Value.Length);
+            }
+
+            return offset_changes;
+        }
     }
 }
