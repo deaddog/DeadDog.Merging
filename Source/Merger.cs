@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class Merger
+    public class Merger<T> where T : IEquatable<T>
     {
         // find Move actions in a list of Change objects (mutates the input list).
         public void find_moves<K>(List<IChange<K>> diff, bool first, IMoveIdentifier<K> identifier)
@@ -81,7 +81,7 @@ namespace DeadDog.Merging
             }
         }
 
-        private void resolveConflict<T>(Delete<T> a, Delete<T> b, ConflictManager cm)
+        private void resolveConflict(Delete<T> a, Delete<T> b, ConflictManager cm)
         {
             // if two Delete actions overlap, take the union of their ranges
             if (a.Range.OverlapsWith(b.Range))
@@ -90,13 +90,13 @@ namespace DeadDog.Merging
                 cm.RemoveB = true;
             }
         }
-        private void resolveConflict<T>(Delete<T> a, Insert<T> b, ConflictManager cm)
+        private void resolveConflict(Delete<T> a, Insert<T> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
             if (a.Range.Contains(b.Position, includeStart: false))
                 cm.AddConflict("[A] is deleting text that [B] is inserting into.");
         }
-        private void resolveConflict<T>(Delete<T> a, Move<T> b, ConflictManager cm)
+        private void resolveConflict(Delete<T> a, Move<T> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
             if (!b.Range1.Contains(a.Range))
@@ -111,12 +111,12 @@ namespace DeadDog.Merging
                 cm.AddConflict("[A] is deleting text that [B] is moving text into.");
         }
 
-        private void resolveConflict<T>(Insert<T> a, Delete<T> b, ConflictManager cm)
+        private void resolveConflict(Insert<T> a, Delete<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private void resolveConflict<T>(Insert<T> a, Insert<T> b, ConflictManager cm)
+        private void resolveConflict(Insert<T> a, Insert<T> b, ConflictManager cm)
         {
             // Insert actions at the same position collide unless the inserted text is the same
             if (a.Position == b.Position)
@@ -125,7 +125,7 @@ namespace DeadDog.Merging
                 else
                     cm.AddConflict("[A] && [B] are inserting text at the same location.");
         }
-        private void resolveConflict<T>(Insert<T> a, Move<T> b, ConflictManager cm)
+        private void resolveConflict(Insert<T> a, Move<T> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (a.Position == b.Position1)
@@ -135,17 +135,17 @@ namespace DeadDog.Merging
                     cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
         }
 
-        private void resolveConflict<T>(Move<T> a, Delete<T> b, ConflictManager cm)
+        private void resolveConflict(Move<T> a, Delete<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private void resolveConflict<T>(Move<T> a, Insert<T> b, ConflictManager cm)
+        private void resolveConflict(Move<T> a, Insert<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private void resolveConflict<T>(Move<T> a, Move<T> b, ConflictManager cm)
+        private void resolveConflict(Move<T> a, Move<T> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
             if (a.Range1.OverlapsWith(b.Range1))
@@ -163,7 +163,7 @@ namespace DeadDog.Merging
         {
             return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
         }
-        public T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
+        public T[] merge(T[] ancestor, T[] a, T[] b)
         {
             // compute the diffs from the common ancestor
             var diff_a = OptimalDiff<T>.Diff(ancestor, a);
