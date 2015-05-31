@@ -142,9 +142,8 @@ namespace DeadDog.Merging
 
         private static void resolveConflict<T>(Insert<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
-            // Insert actions inside the range of Delete actions collide
-            if (a.Position > b.Range.Start && a.Position < b.Range.End)
-                cm.AddConflict("[B] is deleting text that [A] is inserting into.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Insert<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
@@ -167,24 +166,13 @@ namespace DeadDog.Merging
 
         private static void resolveConflict<T>(Move<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
-            // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
-            if (b.Range.Start >= a.Range1.Start && b.Range.End <= a.Range1.End)
-            { }
-            else if (b.Range.Start >= a.Range1.Start && b.Range.Start < a.Range1.End)
-                cm.AddConflict("[A] is moving only part of some text that [B] is deleting.");
-            else if (b.Range.End >= a.Range1.Start && b.Range.End < a.Range1.End)
-                cm.AddConflict("[A] is moving only part of some text that [B] is deleting.");
-            else if (b.Range.Start < a.Range1.Start && b.Range.End > a.Range1.End)
-                cm.AddConflict("[B] is deleting text that [A] is moving.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Move<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
-            // Insert actions at the same location as Move destinations collide unless the text is the same
-            if (b.Position == a.Position1)
-                if (b.Value.Equals(a.Value2))
-                    cm.RemoveB = true;
-                else
-                    cm.AddConflict("[B] is inserting text at the same location that [A] is moving text to.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
         {
