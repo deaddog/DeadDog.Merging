@@ -32,8 +32,8 @@ namespace DeadDog.Merging
                     {
                         diff.Add(new Move<K[]>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
 
-                        diff.RemoveAt(i--);
                         diff.RemoveAt(j--);
+                        diff.RemoveAt(i--);
                         firstInsert--;
                         count -= 2;
 
