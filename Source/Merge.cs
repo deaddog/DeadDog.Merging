@@ -73,6 +73,16 @@ namespace DeadDog.Merging
                 this.conflicts = new List<string>();
             }
 
+            public void Swap()
+            {
+                bool temp = removeA;
+                removeA = removeB;
+                removeB = temp;
+
+                for (int i = 0; i < conflicts.Count; i++)
+                    conflicts[i] = conflicts[i].Replace("[A]", "[T]").Replace("[B]", "[A]").Replace("[T]", "[B]");
+            }
+
             public bool RemoveA
             {
                 get { return removeA; }
@@ -111,7 +121,7 @@ namespace DeadDog.Merging
         {
             // Insert actions inside the range of Delete actions collide
             if (b.Position > a.Range.Start && b.Position < a.Range.End)
-                cm.AddConflict("A is deleting text that B is inserting into.");
+                cm.AddConflict("[A] is deleting text that [B] is inserting into.");
         }
         private static void resolveConflict<T>(Delete<T[]> a, Move<T[]> b, ConflictManager cm)
         {
@@ -119,22 +129,22 @@ namespace DeadDog.Merging
             if (a.Range.Start >= b.Range1.Start && a.Range.End <= b.Range1.End)
             { }
             else if (a.Range.Start >= b.Range1.Start && a.Range.Start < b.Range1.End)
-                cm.AddConflict("B is moving only part of some text that A is deleting.");
+                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
             else if (a.Range.End >= b.Range1.Start && a.Range.End < b.Range1.End)
-                cm.AddConflict("B is moving only part of some text that A is deleting.");
+                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
             else if (a.Range.Start < b.Range1.Start && a.Range.End > b.Range1.End)
-                cm.AddConflict("A is deleting text that B is moving.");
+                cm.AddConflict("[A] is deleting text that [B] is moving.");
 
             // Move destinations inside the range of Delete actions collide
             if (b.Position1 > a.Range.Start && b.Position1 < a.Range.End)
-                cm.AddConflict("A is deleting text that B is moving text into.");
+                cm.AddConflict("[A] is deleting text that [B] is moving text into.");
         }
 
         private static void resolveConflict<T>(Insert<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
             if (a.Position > b.Range.Start && a.Position < b.Range.End)
-                cm.AddConflict("B is deleting text that A is inserting into.");
+                cm.AddConflict("[B] is deleting text that [A] is inserting into.");
         }
         private static void resolveConflict<T>(Insert<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
@@ -143,7 +153,7 @@ namespace DeadDog.Merging
                 if (a.Value.Equals(b.Value))
                     cm.RemoveB = true;
                 else
-                    cm.AddConflict("A && B are inserting text at the same location.");
+                    cm.AddConflict("[A] && [B] are inserting text at the same location.");
         }
         private static void resolveConflict<T>(Insert<T[]> a, Move<T[]> b, ConflictManager cm)
         {
@@ -152,7 +162,7 @@ namespace DeadDog.Merging
                 if (a.Value.Equals(b.Value2))
                     cm.RemoveA = true;
                 else
-                    cm.AddConflict("A is inserting text at the same location that B is moving text to.");
+                    cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
         }
 
         private static void resolveConflict<T>(Move<T[]> a, Delete<T[]> b, ConflictManager cm)
@@ -161,11 +171,11 @@ namespace DeadDog.Merging
             if (b.Range.Start >= a.Range1.Start && b.Range.End <= a.Range1.End)
             { }
             else if (b.Range.Start >= a.Range1.Start && b.Range.Start < a.Range1.End)
-                cm.AddConflict("A is moving only part of some text that B is deleting.");
+                cm.AddConflict("[A] is moving only part of some text that [B] is deleting.");
             else if (b.Range.End >= a.Range1.Start && b.Range.End < a.Range1.End)
-                cm.AddConflict("A is moving only part of some text that B is deleting.");
+                cm.AddConflict("[A] is moving only part of some text that [B] is deleting.");
             else if (b.Range.Start < a.Range1.Start && b.Range.End > a.Range1.End)
-                cm.AddConflict("B is deleting text that A is moving.");
+                cm.AddConflict("[B] is deleting text that [A] is moving.");
         }
         private static void resolveConflict<T>(Move<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
@@ -174,7 +184,7 @@ namespace DeadDog.Merging
                 if (b.Value.Equals(a.Value2))
                     cm.RemoveB = true;
                 else
-                    cm.AddConflict("B is inserting text at the same location that A is moving text to.");
+                    cm.AddConflict("[B] is inserting text at the same location that [A] is moving text to.");
         }
         private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
         {
@@ -182,15 +192,15 @@ namespace DeadDog.Merging
             if (b.Range1.Start >= a.Range1.Start && b.Range1.End <= a.Range1.End)
             { }
             else if (b.Range1.Start >= a.Range1.Start && b.Range1.Start < a.Range1.End)
-                cm.AddConflict("A text move by A overlaps with a text move by B.");
+                cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
             else if (b.Range1.End >= a.Range1.Start && b.Range1.End < a.Range1.End)
-                cm.AddConflict("A text move by A overlaps with a text move by B.");
+                cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
             else if (b.Range1.Start < a.Range1.Start && b.Range1.End > a.Range1.End)
             { }
 
             // Move actions collide if their destination positions are the same
             if (a.Position1 == b.Position1)
-                cm.AddConflict("A && B are moving text to the same location.");
+                cm.AddConflict("[A] && [B] are moving text to the same location.");
         }
 
         #endregion
