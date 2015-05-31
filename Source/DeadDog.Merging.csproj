@@ -51,7 +51,7 @@
     <Compile Include="Insert.cs" />
     <Compile Include="Merge.cs" />
     <Compile Include="Move.cs" />
-    <Compile Include="Offset.cs" />
+    <Compile Include="OffsetManager.cs" />
     <Compile Include="OptimalDiff.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Range.cs" />

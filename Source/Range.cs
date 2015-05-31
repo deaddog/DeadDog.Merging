@@ -18,7 +18,27 @@ namespace DeadDog.Merging
 
         public static Range FromStartLength(int start, int length)
         {
-            return new Range(start, start + length);
+            return new Range(start, start + length - 1);
+        }
+
+        public bool OverlapsWith(Range range)
+        {
+            return (this.start <= range.start && this.end >= range.start) ||
+                   (this.start <= range.end && this.end >= range.end) ||
+                   range.Contains(this);
+        }
+        public bool Contains(Range range, bool includeStart = true)
+        {
+            return (includeStart ? (this.start <= range.start) : (this.start < range.start)) && this.end >= range.end;
+        }
+        public bool Contains(int position, bool includeStart = true)
+        {
+            return (includeStart ? (this.start <= position) : (this.start < position)) && this.end >= position;
+        }
+
+        public static Range Join(Range range1, Range range2)
+        {
+            return new Range(Math.Min(range1.start, range2.start), Math.Max(range1.end, range2.end));
         }
 
         public int Start
@@ -31,7 +51,7 @@ namespace DeadDog.Merging
         }
         public int Length
         {
-            get { return end - start; }
+            get { return end - start + 1; }
         }
 
         public override string ToString()

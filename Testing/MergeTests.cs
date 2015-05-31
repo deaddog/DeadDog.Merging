@@ -89,5 +89,21 @@ namespace DeadDog.Merging.Tests
 
             Assert.AreEqual("", result);
         }
+
+        [TestMethod()]
+        public void mergeTest11()
+        {
+            string result = Merge.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbbbbbbb", "bbbbbbbbbbaaaaaaaaaa");
+
+            Assert.AreEqual("bbbbbbbbbbaaaaaaaaaa", result);
+        }
+
+        [TestMethod()]
+        public void mergeTest12()
+        {
+            string result = Merge.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbccbbbb", "bbbbbbbbbbaaaaaaaaaa");
+
+            Assert.AreEqual("bbbbccbbbbaaaaaaaaaa", result);
+        }
     }
 }

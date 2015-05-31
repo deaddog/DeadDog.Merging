@@ -57,6 +57,16 @@ namespace DeadDog.Merging
                 this.conflicts = new List<string>();
             }
 
+            public void Swap()
+            {
+                bool temp = removeA;
+                removeA = removeB;
+                removeB = temp;
+
+                for (int i = 0; i < conflicts.Count; i++)
+                    conflicts[i] = conflicts[i].Replace("[A]", "[T]").Replace("[B]", "[A]").Replace("[T]", "[B]");
+            }
+
             public bool RemoveA
             {
                 get { return removeA; }
@@ -83,42 +93,37 @@ namespace DeadDog.Merging
         private static void resolveConflict<T>(Delete<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // if two Delete actions overlap, take the union of their ranges
-            if ((b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End) ||
-                (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End) ||
-                (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End))
+            if (a.Range.OverlapsWith(b.Range))
             {
-                a.Range = new Range(Math.Min(a.Range.Start, b.Range.Start), Math.Max(a.Range.End, b.Range.End));
+                a.Range = Range.Join(a.Range, b.Range);
                 cm.RemoveB = true;
             }
         }
         private static void resolveConflict<T>(Delete<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
-            if (b.Position > a.Range.Start && b.Position < a.Range.End)
-                cm.AddConflict("A is deleting text that B is inserting into.");
+            if (a.Range.Contains(b.Position, includeStart: false))
+                cm.AddConflict("[A] is deleting text that [B] is inserting into.");
         }
         private static void resolveConflict<T>(Delete<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-            if (a.Range.Start >= b.Range1.Start && a.Range.End <= b.Range1.End)
+            if (!b.Range1.Contains(a.Range))
             { }
-            else if (a.Range.Start >= b.Range1.Start && a.Range.Start < b.Range1.End)
-                cm.AddConflict("B is moving only part of some text that A is deleting.");
-            else if (a.Range.End >= b.Range1.Start && a.Range.End < b.Range1.End)
-                cm.AddConflict("B is moving only part of some text that A is deleting.");
-            else if (a.Range.Start < b.Range1.Start && a.Range.End > b.Range1.End)
-                cm.AddConflict("A is deleting text that B is moving.");
+            else if (a.Range.Contains(b.Range1, includeStart: false))
+                cm.AddConflict("[A] is deleting text that [B] is moving.");
+            else if (a.Range.OverlapsWith(b.Range1))
+                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
 
             // Move destinations inside the range of Delete actions collide
-            if (b.Position1 > a.Range.Start && b.Position1 < a.Range.End)
-                cm.AddConflict("A is deleting text that B is moving text into.");
+            if (a.Range.Contains(b.Position1, includeStart: false))
+                cm.AddConflict("[A] is deleting text that [B] is moving text into.");
         }
 
         private static void resolveConflict<T>(Insert<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
-            // Insert actions inside the range of Delete actions collide
-            if (a.Position > b.Range.Start && a.Position < b.Range.End)
-                cm.AddConflict("B is deleting text that A is inserting into.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Insert<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
@@ -127,54 +132,38 @@ namespace DeadDog.Merging
                 if (a.Value.Equals(b.Value))
                     cm.RemoveB = true;
                 else
-                    cm.AddConflict("A && B are inserting text at the same location.");
+                    cm.AddConflict("[A] && [B] are inserting text at the same location.");
         }
         private static void resolveConflict<T>(Insert<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (a.Position == b.Position1)
-                if (a.Value.Equals((b as Move<char[]>).Value2))
+                if (a.Value.Equals(b.Value2))
                     cm.RemoveA = true;
                 else
-                    cm.AddConflict("A is inserting text at the same location that B is moving text to.");
+                    cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
         }
 
         private static void resolveConflict<T>(Move<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
-            // Delete actions that overlap with but are not fully contained within PsuedoMove actions collide
-            if (b.Range.Start >= a.Range1.Start && b.Range.End <= a.Range1.End)
-            { }
-            else if (b.Range.Start >= a.Range1.Start && b.Range.Start < a.Range1.End)
-                cm.AddConflict("A is moving only part of some text that B is deleting.");
-            else if (b.Range.End >= a.Range1.Start && b.Range.End < a.Range1.End)
-                cm.AddConflict("A is moving only part of some text that B is deleting.");
-            else if (b.Range.Start < a.Range1.Start && b.Range.End > a.Range1.End)
-                cm.AddConflict("B is deleting text that A is moving.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Move<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
-            // Insert actions at the same location as Move destinations collide unless the text is the same
-            if (b.Position == a.Position1)
-                if (b.Value.Equals((a as Move<char[]>).Value2))
-                    cm.RemoveB = true;
-                else
-                    cm.AddConflict("B is inserting text at the same location that A is moving text to.");
+            resolveConflict(b, a, cm);
+            cm.Swap();
         }
         private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-            if (b.Range1.Start >= a.Range1.Start && b.Range1.End <= a.Range1.End)
-            { }
-            else if (b.Range1.Start >= a.Range1.Start && b.Range1.Start < a.Range1.End)
-                cm.AddConflict("A text move by A overlaps with a text move by B.");
-            else if (b.Range1.End >= a.Range1.Start && b.Range1.End < a.Range1.End)
-                cm.AddConflict("A text move by A overlaps with a text move by B.");
-            else if (b.Range1.Start < a.Range1.Start && b.Range1.End > a.Range1.End)
-            { }
+            if (a.Range1.OverlapsWith(b.Range1))
+                if (!(a.Range1.Contains(b.Range1) || b.Range1.Contains(a.Range1)))
+                    cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
 
             // Move actions collide if their destination positions are the same
             if (a.Position1 == b.Position1)
-                cm.AddConflict("A && B are moving text to the same location.");
+                cm.AddConflict("[A] && [B] are moving text to the same location.");
         }
 
         #endregion
@@ -221,9 +210,9 @@ namespace DeadDog.Merging
             ChangeQueue<T[]> actions = new ChangeQueue<T[]>(diff_a, diff_b);
 
             // compute offset lists
-            var offset_changes_ab = Offset.ConstructNoMove(actions);
-            var offset_changes_a = Offset.Construct(diff_a);
-            var offset_changes_b = Offset.Construct(diff_b);
+            var offset_changes_ab = OffsetManager.ConstructNoMove(actions);
+            var offset_changes_a = OffsetManager.Construct(diff_a);
+            var offset_changes_b = OffsetManager.Construct(diff_b);
 
             // compute the preliminary merge
             T[] preliminary_merge = (T[])ancestor.Clone();
@@ -232,9 +221,9 @@ namespace DeadDog.Merging
             {
                 if (actions[i] is Delete<T[]>)
                 {
-                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Substring(actions[i].Range.End + pos_offset);
-                    pos_offset += actions[i].Range.Start - actions[i].Range.End;
-                    offset_changes_ab.AddOffset(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End);
+                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Substring(actions[i].Range.End + 1 + pos_offset);
+                    pos_offset -= actions[i].Range.Length;
+                    offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
                 }
                 else if (actions[i] is Insert<T[]>)
                 {
@@ -248,11 +237,10 @@ namespace DeadDog.Merging
             for (int i = 0; i < actions.Count; i++)
                 if (actions[i] is Move<T[]>)
                 {
-                    int range_a0 = offset_changes_ab.OffsetPosition(actions[i].Range.Start);
-                    int range_a1 = offset_changes_ab.OffsetPosition(actions[i].Range.End);
+                    Range range = offset_changes_ab.Offset(actions[i].Range);
 
-                    offset_changes_ab.AddOffset(actions[i].Range.Start, actions[i].Range.Start - actions[i].Range.End);
-                    preliminary_merge = preliminary_merge.Substring(0, range_a0) + preliminary_merge.Substring(range_a1);
+                    offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
+                    preliminary_merge = preliminary_merge.Substring(0, range.Start) + preliminary_merge.Substring(range.End + 1);
                 }
 
             // perform the "add" part of the moves
@@ -260,22 +248,20 @@ namespace DeadDog.Merging
                 if (actions[i] is Move<T[]>)
                 {
                     var m = actions[i] as Move<T[]>;
-                    int pos_a = offset_changes_ab.OffsetPosition(actions[i].Position);
+                    int pos_a = offset_changes_ab.Offset(actions[i].Position);
                     var text_ancestor = actions[i].Value;
                     T[] text_a, text_b;
                     if (m.First)
                     {
                         text_a = m.Value2;
-                        var range_a0 = offset_changes_b.OffsetPosition(m.Range1.Start);
-                        var range_a1 = offset_changes_b.OffsetPosition(m.Range1.End);
-                        text_b = b.Substring(range_a0, range_a1).ToCharArray();
+                        var range = offset_changes_b.Offset(m.Range1);
+                        text_b = b.Substring(range.Start, range.End + 1).ToCharArray();
                     }
                     else
                     {
                         text_b = m.Value2;
-                        var range_a0 = offset_changes_a.OffsetPosition(actions[i].Range.Start);
-                        var range_a1 = offset_changes_a.OffsetPosition(actions[i].Range.End);
-                        text_a = a.Substring(range_a0, range_a1).ToCharArray();
+                        var range = offset_changes_a.Offset(actions[i].Range);
+                        text_a = a.Substring(range.Start, range.End + 1).ToCharArray();
                     }
                     var text = merge(new string(text_a), new string(text_b), new string(text_ancestor));
                     offset_changes_ab.AddOffset(actions[i].Position, text.Length);
