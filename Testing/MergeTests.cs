@@ -13,7 +13,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest1()
         {
-            string result = Merge.merge("test", "test", "test");
+            string result = Merger.merge("test", "test", "test");
 
             Assert.AreEqual("test", result);
         }
@@ -21,7 +21,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest2()
         {
-            string result = Merge.merge("test", "hest", "test");
+            string result = Merger.merge("test", "hest", "test");
 
             Assert.AreEqual("hest", result);
         }
@@ -29,7 +29,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest3()
         {
-            string result = Merge.merge("test", "test", "vest");
+            string result = Merger.merge("test", "test", "vest");
 
             Assert.AreEqual("vest", result);
         }
@@ -37,7 +37,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest4()
         {
-            string result = Merge.merge("test", "hast", "test");
+            string result = Merger.merge("test", "hast", "test");
 
             Assert.AreEqual("hast", result);
         }
@@ -45,7 +45,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest5()
         {
-            string result = Merge.merge("test", "test", "fast");
+            string result = Merger.merge("test", "test", "fast");
 
             Assert.AreEqual("fast", result);
         }
@@ -53,7 +53,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest6()
         {
-            string result = Merge.merge("test", "vest", "tast");
+            string result = Merger.merge("test", "vest", "tast");
 
             Assert.AreEqual("vast", result);
         }
@@ -61,7 +61,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest7()
         {
-            string result = Merge.merge("test", "fest", "tester");
+            string result = Merger.merge("test", "fest", "tester");
 
             Assert.AreEqual("fester", result);
         }
@@ -69,7 +69,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest8()
         {
-            string result = Merge.merge("test", "vest", "tes");
+            string result = Merger.merge("test", "vest", "tes");
 
             Assert.AreEqual("ves", result);
         }
@@ -77,7 +77,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest9()
         {
-            string result = Merge.merge("test", "", "test");
+            string result = Merger.merge("test", "", "test");
 
             Assert.AreEqual("", result);
         }
@@ -85,7 +85,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest10()
         {
-            string result = Merge.merge("test", "te", "st");
+            string result = Merger.merge("test", "te", "st");
 
             Assert.AreEqual("", result);
         }
@@ -93,7 +93,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest11()
         {
-            string result = Merge.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbbbbbbb", "bbbbbbbbbbaaaaaaaaaa");
+            string result = Merger.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbbbbbbb", "bbbbbbbbbbaaaaaaaaaa");
 
             Assert.AreEqual("bbbbbbbbbbaaaaaaaaaa", result);
         }
@@ -101,7 +101,7 @@ namespace DeadDog.Merging.Tests
         [TestMethod()]
         public void mergeTest12()
         {
-            string result = Merge.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbccbbbb", "bbbbbbbbbbaaaaaaaaaa");
+            string result = Merger.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbccbbbb", "bbbbbbbbbbaaaaaaaaaa");
 
             Assert.AreEqual("bbbbccbbbbaaaaaaaaaa", result);
         }

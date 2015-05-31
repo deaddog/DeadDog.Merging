@@ -51,7 +51,7 @@
     <Compile Include="IDiff.cs" />
     <Compile Include="IMoveIdentifier.cs" />
     <Compile Include="Insert.cs" />
-    <Compile Include="Merge.cs" />
+    <Compile Include="Merger.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="OffsetManager.cs" />
     <Compile Include="OptimalDiff.cs" />

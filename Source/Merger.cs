@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class Merge
+    public class Merger
     {
         // find Move actions in a list of Change objects (mutates the input list).
         public static void find_moves<K>(List<IChange<K>> diff, bool first, IMoveIdentifier<K> identifier)
