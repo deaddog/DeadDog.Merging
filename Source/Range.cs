@@ -18,7 +18,7 @@ namespace DeadDog.Merging
 
         public static Range FromStartLength(int start, int length)
         {
-            return new Range(start, start + length);
+            return new Range(start, start + length - 1);
         }
 
         public bool OverlapsWith(Range range)
@@ -51,7 +51,7 @@ namespace DeadDog.Merging
         }
         public int Length
         {
-            get { return end - start; }
+            get { return end - start + 1; }
         }
 
         public override string ToString()
