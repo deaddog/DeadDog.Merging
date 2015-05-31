@@ -109,34 +109,30 @@ namespace DeadDog.Merging
         private static void resolveConflict<T>(Delete<T[]> a, Delete<T[]> b, ConflictManager cm)
         {
             // if two Delete actions overlap, take the union of their ranges
-            if ((b.Range.Start >= a.Range.Start && b.Range.Start < a.Range.End) ||
-                (b.Range.End >= a.Range.Start && b.Range.End < a.Range.End) ||
-                (b.Range.Start < a.Range.Start && b.Range.End > a.Range.End))
+            if (a.Range.OverlapsWith(b.Range))
             {
-                a.Range = new Range(Math.Min(a.Range.Start, b.Range.Start), Math.Max(a.Range.End, b.Range.End));
+                a.Range = Range.Join(a.Range, b.Range);
                 cm.RemoveB = true;
             }
         }
         private static void resolveConflict<T>(Delete<T[]> a, Insert<T[]> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
-            if (b.Position > a.Range.Start && b.Position < a.Range.End)
+            if (a.Range.Contains(b.Position, includeStart: false))
                 cm.AddConflict("[A] is deleting text that [B] is inserting into.");
         }
         private static void resolveConflict<T>(Delete<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-            if (a.Range.Start >= b.Range1.Start && a.Range.End <= b.Range1.End)
+            if (!b.Range1.Contains(a.Range))
             { }
-            else if (a.Range.Start >= b.Range1.Start && a.Range.Start < b.Range1.End)
-                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
-            else if (a.Range.End >= b.Range1.Start && a.Range.End < b.Range1.End)
-                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
-            else if (a.Range.Start < b.Range1.Start && a.Range.End > b.Range1.End)
+            else if (a.Range.Contains(b.Range1, includeStart: false))
                 cm.AddConflict("[A] is deleting text that [B] is moving.");
+            else if (a.Range.OverlapsWith(b.Range1))
+                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
 
             // Move destinations inside the range of Delete actions collide
-            if (b.Position1 > a.Range.Start && b.Position1 < a.Range.End)
+            if (a.Range.Contains(b.Position1, includeStart: false))
                 cm.AddConflict("[A] is deleting text that [B] is moving text into.");
         }
 
@@ -177,14 +173,9 @@ namespace DeadDog.Merging
         private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-            if (b.Range1.Start >= a.Range1.Start && b.Range1.End <= a.Range1.End)
-            { }
-            else if (b.Range1.Start >= a.Range1.Start && b.Range1.Start < a.Range1.End)
-                cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
-            else if (b.Range1.End >= a.Range1.Start && b.Range1.End < a.Range1.End)
-                cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
-            else if (b.Range1.Start < a.Range1.Start && b.Range1.End > a.Range1.End)
-            { }
+            if (a.Range1.OverlapsWith(b.Range1))
+                if (!(a.Range1.Contains(b.Range1) || b.Range1.Contains(a.Range1)))
+                    cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
 
             // Move actions collide if their destination positions are the same
             if (a.Position1 == b.Position1)
