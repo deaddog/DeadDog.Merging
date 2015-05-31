@@ -271,4 +271,16 @@ namespace DeadDog.Merging
             return preliminary_merge;
         }
     }
+
+    public static class Merger
+    {
+        public static string merge(string ancestor, string a, string b)
+        {
+            return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
+        }
+        public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
+        {
+            return new Merger<T>(null, null).merge(ancestor, a, b);
+        }
+    }
 }
