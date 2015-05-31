@@ -222,9 +222,9 @@ namespace DeadDog.Merging
             ChangeQueue<char[]> actions = new ChangeQueue<char[]>(diff_a, diff_b);
 
             // compute offset lists
-            var offset_changes_ab = Offset.ConstructNoMove(actions);
-            var offset_changes_a = Offset.Construct(diff_a);
-            var offset_changes_b = Offset.Construct(diff_b);
+            var offset_changes_ab = OffsetManager.ConstructNoMove(actions);
+            var offset_changes_a = OffsetManager.Construct(diff_a);
+            var offset_changes_b = OffsetManager.Construct(diff_b);
 
             // compute the preliminary merge
             string preliminary_merge = (string)ancestor.Clone();
@@ -249,8 +249,8 @@ namespace DeadDog.Merging
             for (int i = 0; i < actions.Count; i++)
                 if (actions[i] is Move<char[]>)
                 {
-                    int range_a0 = offset_changes_ab.OffsetPosition(actions[i].Range.Start);
-                    int range_a1 = offset_changes_ab.OffsetPosition(actions[i].Range.End + 1);
+                    int range_a0 = offset_changes_ab.Offset(actions[i].Range.Start);
+                    int range_a1 = offset_changes_ab.Offset(actions[i].Range.End + 1);
 
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
                     preliminary_merge = preliminary_merge.Substring(0, range_a0) + preliminary_merge.Substring(range_a1);
@@ -261,21 +261,21 @@ namespace DeadDog.Merging
                 if (actions[i] is Move<char[]>)
                 {
                     var m = actions[i] as Move<char[]>;
-                    int pos_a = offset_changes_ab.OffsetPosition(actions[i].Position);
+                    int pos_a = offset_changes_ab.Offset(actions[i].Position);
                     var text_ancestor = actions[i].Value;
                     char[] text_a, text_b;
                     if (m.First)
                     {
                         text_a = m.Value2;
-                        var range_a0 = offset_changes_b.OffsetPosition(m.Range1.Start);
-                        var range_a1 = offset_changes_b.OffsetPosition(m.Range1.End + 1);
+                        var range_a0 = offset_changes_b.Offset(m.Range1.Start);
+                        var range_a1 = offset_changes_b.Offset(m.Range1.End + 1);
                         text_b = b.Substring(range_a0, range_a1).ToCharArray();
                     }
                     else
                     {
                         text_b = m.Value2;
-                        var range_a0 = offset_changes_a.OffsetPosition(actions[i].Range.Start);
-                        var range_a1 = offset_changes_a.OffsetPosition(actions[i].Range.End + 1);
+                        var range_a0 = offset_changes_a.Offset(actions[i].Range.Start);
+                        var range_a1 = offset_changes_a.Offset(actions[i].Range.End + 1);
                         text_a = a.Substring(range_a0, range_a1).ToCharArray();
                     }
                     var text = merge(new string(text_a), new string(text_b), new string(text_ancestor));

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public class Offset
+    public class OffsetManager
     {
         private List<Tuple<int, int>> offsets;
 
-        public Offset()
+        public OffsetManager()
         {
             this.offsets = new List<Tuple<int, int>>();
         }
@@ -20,7 +20,7 @@ namespace DeadDog.Merging
             this.offsets.Add(Tuple.Create(a, b));
         }
 
-        public int OffsetPosition(int position)
+        public int Offset(int position)
         {
             int pos = position;
             foreach (var offset_pair in offsets)
@@ -31,9 +31,9 @@ namespace DeadDog.Merging
             return pos;
         }
 
-        public static Offset Construct<T>(IEnumerable<IChange<T[]>> collection)
+        public static OffsetManager Construct<T>(IEnumerable<IChange<T[]>> collection)
         {
-            var offset_changes = new Offset();
+            var offset_changes = new OffsetManager();
 
             foreach (var change in collection)
             {
@@ -46,9 +46,9 @@ namespace DeadDog.Merging
 
             return offset_changes;
         }
-        public static Offset ConstructNoMove<T>(IEnumerable<IChange<T[]>> collection)
+        public static OffsetManager ConstructNoMove<T>(IEnumerable<IChange<T[]>> collection)
         {
-            var offset_changes = new Offset();
+            var offset_changes = new OffsetManager();
 
             foreach (var change in collection)
             {
