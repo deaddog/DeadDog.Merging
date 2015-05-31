@@ -8,17 +8,8 @@ namespace DeadDog.Merging
 {
     public class Merge
     {
-        // the maximum normalized distance (0-1) between two strings for them to be considered the same
-        // for the purposes of finding Move actions
-        const double MAX_MOVE_DIST = 0.2;
-
-        // the minimum number of items that can be considered a Move action
-        const int MIN_MOVE_LENGTH = 10;
-
         // find Move actions in a list of Change objects (mutates the input list).
-        // a Move action comes from an Insert-Delete pair where the strings differ
-        // by less than MAX_MOVE_DIST in terms of normalized Levenshtein distance
-        public static void find_moves<K>(List<IChange<K>> diff, bool first) where K : IEquatable<K>
+        public static void find_moves<K>(List<IChange<K>> diff, bool first, IMoveIdentifier<K> identifier)
         {
             diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K> ? -1 : 1));
             int firstInsert = diff.FindIndex(x => x is Insert<K>);
@@ -27,8 +18,8 @@ namespace DeadDog.Merging
             for (int i = 0; i < firstInsert; i++)
                 for (int j = firstInsert; j < count; j++)
                 {
-                    double normalized_dist = EditDistance.GetDistance(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
-                    if (normalized_dist <= MAX_MOVE_DIST && Math.Max(diff[i].Value.Length, diff[j].Value.Length) >= MIN_MOVE_LENGTH)
+                    double? weight = identifier.MoveWeight(diff[i] as Delete<K>, diff[j] as Insert<K>);
+                    if (weight.HasValue)
                     {
                         diff.Add(new Move<K>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
 
