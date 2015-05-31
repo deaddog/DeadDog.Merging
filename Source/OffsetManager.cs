@@ -30,6 +30,10 @@ namespace DeadDog.Merging
             }
             return pos;
         }
+        public Range Offset(Range range)
+        {
+            return new Range(Offset(range.Start), Offset(range.End));
+        }
 
         public static OffsetManager Construct<T>(IEnumerable<IChange<T[]>> collection)
         {

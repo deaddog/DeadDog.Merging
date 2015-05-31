@@ -249,11 +249,10 @@ namespace DeadDog.Merging
             for (int i = 0; i < actions.Count; i++)
                 if (actions[i] is Move<char[]>)
                 {
-                    int range_a0 = offset_changes_ab.Offset(actions[i].Range.Start);
-                    int range_a1 = offset_changes_ab.Offset(actions[i].Range.End + 1);
+                    Range range = offset_changes_ab.Offset(actions[i].Range);
 
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
-                    preliminary_merge = preliminary_merge.Substring(0, range_a0) + preliminary_merge.Substring(range_a1);
+                    preliminary_merge = preliminary_merge.Substring(0, range.Start) + preliminary_merge.Substring(range.End + 1);
                 }
 
             // perform the "add" part of the moves
@@ -267,16 +266,14 @@ namespace DeadDog.Merging
                     if (m.First)
                     {
                         text_a = m.Value2;
-                        var range_a0 = offset_changes_b.Offset(m.Range1.Start);
-                        var range_a1 = offset_changes_b.Offset(m.Range1.End + 1);
-                        text_b = b.Substring(range_a0, range_a1).ToCharArray();
+                        var range = offset_changes_b.Offset(m.Range1);
+                        text_b = b.Substring(range.Start, range.End + 1).ToCharArray();
                     }
                     else
                     {
                         text_b = m.Value2;
-                        var range_a0 = offset_changes_a.Offset(actions[i].Range.Start);
-                        var range_a1 = offset_changes_a.Offset(actions[i].Range.End + 1);
-                        text_a = a.Substring(range_a0, range_a1).ToCharArray();
+                        var range = offset_changes_a.Offset(actions[i].Range);
+                        text_a = a.Substring(range.Start, range.End + 1).ToCharArray();
                     }
                     var text = merge(new string(text_a), new string(text_b), new string(text_ancestor));
                     offset_changes_ab.AddOffset(actions[i].Position, text.Length);
