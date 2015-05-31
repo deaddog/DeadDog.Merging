@@ -227,7 +227,7 @@ namespace DeadDog.Merging
                 }
                 else if (actions[i] is Insert<T[]>)
                 {
-                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Position + pos_offset) + new string(actions[i].Value) + preliminary_merge.Substring(actions[i].Position + pos_offset);
+                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Position + pos_offset) + actions[i].Value + preliminary_merge.Substring(actions[i].Position + pos_offset);
                     pos_offset += actions[i].Value.Length;
                     offset_changes_ab.AddOffset(actions[i].Position, actions[i].Value.Length);
                 }
@@ -255,15 +255,15 @@ namespace DeadDog.Merging
                     {
                         text_a = m.Value2;
                         var range = offset_changes_b.Offset(m.Range1);
-                        text_b = b.Substring(range.Start, range.End + 1).ToCharArray();
+                        text_b = b.Substring(range.Start, range.End + 1);
                     }
                     else
                     {
                         text_b = m.Value2;
                         var range = offset_changes_a.Offset(actions[i].Range);
-                        text_a = a.Substring(range.Start, range.End + 1).ToCharArray();
+                        text_a = a.Substring(range.Start, range.End + 1);
                     }
-                    var text = merge(new string(text_a), new string(text_b), new string(text_ancestor));
+                    var text = merge(text_a, text_b, text_ancestor);
                     offset_changes_ab.AddOffset(actions[i].Position, text.Length);
                     preliminary_merge = preliminary_merge.Substring(0, pos_a) + text + preliminary_merge.Substring(pos_a);
                 }
