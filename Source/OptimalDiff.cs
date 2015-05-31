@@ -12,17 +12,17 @@ namespace DeadDog.Merging
         {
         }
 
-        public IEnumerable<IChange<T[]>> Diff(IEnumerable<T> origin, IEnumerable<T> modified)
+        public IEnumerable<IChange<T>> Diff(IEnumerable<T> origin, IEnumerable<T> modified)
         {
             return str_diff(origin.ToArray(), modified.ToArray());
         }
 
-        private List<IChange<T[]>> str_diff(T[] a, T[] b)
+        private List<IChange<T>> str_diff(T[] a, T[] b)
         {
             var diff = EditDistance.GetOperations(a, b);
             Array.Sort(diff, (x, y) => x.Item1.CompareTo(y.Item1));
 
-            var changes = new List<IChange<T[]>>();
+            var changes = new List<IChange<T>>();
             int pos_diff = 0;
             int offset_b = 0;
 
@@ -44,7 +44,7 @@ namespace DeadDog.Merging
                     int pos_a = pos_a_old;
 
                     T[] sub = b.Subarray(r);
-                    changes.Add(new Insert<T[]>(sub, pos_a, r));
+                    changes.Add(new Insert<T>(sub, pos_a, r));
                     offset_b += length;
                 }
                 if (pos_diff >= diff.Length)
@@ -64,7 +64,7 @@ namespace DeadDog.Merging
                     int pos_b = pos_a_old + offset_b;
 
                     T[] sub = a.Subarray(r);
-                    changes.Add(new Delete<T[]>(sub, pos_b, r));
+                    changes.Add(new Delete<T>(sub, pos_b, r));
                     offset_b -= length;
                 }
             }

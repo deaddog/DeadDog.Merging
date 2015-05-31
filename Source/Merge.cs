@@ -18,10 +18,10 @@ namespace DeadDog.Merging
         // find Move actions in a list of Change objects (mutates the input list).
         // a Move action comes from an Insert-Delete pair where the strings differ
         // by less than MAX_MOVE_DIST in terms of normalized Levenshtein distance
-        public static void find_moves<K>(List<IChange<K[]>> diff, bool first) where K : IEquatable<K>
+        public static void find_moves<K>(List<IChange<K>> diff, bool first) where K : IEquatable<K>
         {
-            diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K[]> ? -1 : 1));
-            int firstInsert = diff.FindIndex(x => x is Insert<K[]>);
+            diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K> ? -1 : 1));
+            int firstInsert = diff.FindIndex(x => x is Insert<K>);
             int count = diff.Count;
 
             for (int i = 0; i < firstInsert; i++)
@@ -30,7 +30,7 @@ namespace DeadDog.Merging
                     double normalized_dist = EditDistance.GetDistance(diff[i].Value, diff[j].Value) / Math.Max(diff[i].Value.Length, diff[j].Value.Length);
                     if (normalized_dist <= MAX_MOVE_DIST && Math.Max(diff[i].Value.Length, diff[j].Value.Length) >= MIN_MOVE_LENGTH)
                     {
-                        diff.Add(new Move<K[]>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
+                        diff.Add(new Move<K>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
 
                         diff.RemoveAt(j--);
                         diff.RemoveAt(i--);
@@ -90,7 +90,7 @@ namespace DeadDog.Merging
             }
         }
 
-        private static void resolveConflict<T>(Delete<T[]> a, Delete<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T> a, Delete<T> b, ConflictManager cm)
         {
             // if two Delete actions overlap, take the union of their ranges
             if (a.Range.OverlapsWith(b.Range))
@@ -99,13 +99,13 @@ namespace DeadDog.Merging
                 cm.RemoveB = true;
             }
         }
-        private static void resolveConflict<T>(Delete<T[]> a, Insert<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T> a, Insert<T> b, ConflictManager cm)
         {
             // Insert actions inside the range of Delete actions collide
             if (a.Range.Contains(b.Position, includeStart: false))
                 cm.AddConflict("[A] is deleting text that [B] is inserting into.");
         }
-        private static void resolveConflict<T>(Delete<T[]> a, Move<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Delete<T> a, Move<T> b, ConflictManager cm)
         {
             // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
             if (!b.Range1.Contains(a.Range))
@@ -120,12 +120,12 @@ namespace DeadDog.Merging
                 cm.AddConflict("[A] is deleting text that [B] is moving text into.");
         }
 
-        private static void resolveConflict<T>(Insert<T[]> a, Delete<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T> a, Delete<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private static void resolveConflict<T>(Insert<T[]> a, Insert<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T> a, Insert<T> b, ConflictManager cm)
         {
             // Insert actions at the same position collide unless the inserted text is the same
             if (a.Position == b.Position)
@@ -134,7 +134,7 @@ namespace DeadDog.Merging
                 else
                     cm.AddConflict("[A] && [B] are inserting text at the same location.");
         }
-        private static void resolveConflict<T>(Insert<T[]> a, Move<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Insert<T> a, Move<T> b, ConflictManager cm)
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (a.Position == b.Position1)
@@ -144,17 +144,17 @@ namespace DeadDog.Merging
                     cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
         }
 
-        private static void resolveConflict<T>(Move<T[]> a, Delete<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T> a, Delete<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private static void resolveConflict<T>(Move<T[]> a, Insert<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T> a, Insert<T> b, ConflictManager cm)
         {
             resolveConflict(b, a, cm);
             cm.Swap();
         }
-        private static void resolveConflict<T>(Move<T[]> a, Move<T[]> b, ConflictManager cm)
+        private static void resolveConflict<T>(Move<T> a, Move<T> b, ConflictManager cm)
         {
             // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
             if (a.Range1.OverlapsWith(b.Range1))
@@ -207,7 +207,7 @@ namespace DeadDog.Merging
                 throw new Exception("CONFLICT!");
 
             // sort the actions by position in the common ancestor
-            ChangeQueue<T[]> actions = new ChangeQueue<T[]>(diff_a, diff_b);
+            ChangeQueue<T> actions = new ChangeQueue<T>(diff_a, diff_b);
 
             // compute offset lists
             var offset_changes_ab = OffsetManager.ConstructNoMove(actions);
@@ -219,13 +219,13 @@ namespace DeadDog.Merging
             int pos_offset = 0;
             for (int i = 0; i < actions.Count; i++)
             {
-                if (actions[i] is Delete<T[]>)
+                if (actions[i] is Delete<T>)
                 {
                     preliminary_merge = preliminary_merge.Subarray(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Subarray(actions[i].Range.End + 1 + pos_offset);
                     pos_offset -= actions[i].Range.Length;
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
                 }
-                else if (actions[i] is Insert<T[]>)
+                else if (actions[i] is Insert<T>)
                 {
                     preliminary_merge = preliminary_merge.Subarray(0, actions[i].Position + pos_offset) + actions[i].Value + preliminary_merge.Subarray(actions[i].Position + pos_offset);
                     pos_offset += actions[i].Value.Length;
@@ -235,7 +235,7 @@ namespace DeadDog.Merging
 
             // perform the "delete" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i] is Move<T[]>)
+                if (actions[i] is Move<T>)
                 {
                     Range range = offset_changes_ab.Offset(actions[i].Range);
 
@@ -245,9 +245,9 @@ namespace DeadDog.Merging
 
             // perform the "add" part of the moves
             for (int i = 0; i < actions.Count; i++)
-                if (actions[i] is Move<T[]>)
+                if (actions[i] is Move<T>)
                 {
-                    var m = actions[i] as Move<T[]>;
+                    var m = actions[i] as Move<T>;
                     int pos_a = offset_changes_ab.Offset(actions[i].Position);
                     var text_ancestor = actions[i].Value;
                     T[] text_a, text_b;

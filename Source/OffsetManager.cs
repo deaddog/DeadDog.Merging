@@ -35,31 +35,31 @@ namespace DeadDog.Merging
             return new Range(Offset(range.Start), Offset(range.End));
         }
 
-        public static OffsetManager Construct<T>(IEnumerable<IChange<T[]>> collection)
+        public static OffsetManager Construct<T>(IEnumerable<IChange<T>> collection)
         {
             var offset_changes = new OffsetManager();
 
             foreach (var change in collection)
             {
-                if (!(change is Insert<T[]>))
+                if (!(change is Insert<T>))
                     offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
-                if (!(change is Delete<T[]>))
+                if (!(change is Delete<T>))
                     offset_changes.AddOffset(change.Position, change.Value.Length);
             }
 
             return offset_changes;
         }
-        public static OffsetManager ConstructNoMove<T>(IEnumerable<IChange<T[]>> collection)
+        public static OffsetManager ConstructNoMove<T>(IEnumerable<IChange<T>> collection)
         {
             var offset_changes = new OffsetManager();
 
             foreach (var change in collection)
             {
-                if (change is Delete<T[]>)
+                if (change is Delete<T>)
                     offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
-                if (change is Insert<T[]>)
+                if (change is Insert<T>)
                     offset_changes.AddOffset(change.Position, change.Value.Length);
             }
 

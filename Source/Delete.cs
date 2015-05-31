@@ -4,27 +4,27 @@ namespace DeadDog.Merging
 {
     public class Delete<T> : IChange<T>
     {
-        private T value;
+        private T[] value;
         private int pos;
         private Range range;
 
-        public Delete<T2> Clone<T2>(T2 newValue)
+        public Delete<T2> Clone<T2>(T2[] newValue)
         {
             return new Delete<T2>(newValue, this.pos, this.range);
         }
-        IChange<T2> IChange<T>.Clone<T2>(T2 newValue)
+        IChange<T2> IChange<T>.Clone<T2>(T2[] newValue)
         {
             return this.Clone(newValue);
         }
 
-        public Delete(T value, int pos, Range range)
+        public Delete(T[] value, int pos, Range range)
         {
             this.value = value;
             this.pos = pos;
             this.range = range;
         }
 
-        public T Value
+        public T[] Value
         {
             get { return value; }
         }

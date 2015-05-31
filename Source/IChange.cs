@@ -8,9 +8,9 @@ namespace DeadDog.Merging
 {
     public interface IChange<T>
     {
-        IChange<T2> Clone<T2>(T2 newValue);
+        IChange<T2> Clone<T2>(T2[] newValue);
 
-        T Value
+        T[] Value
         {
             get;
         }
