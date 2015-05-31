@@ -8,6 +8,20 @@ namespace DeadDog.Merging
 {
     public class Merger<T> where T : IEquatable<T>
     {
+        private IMoveIdentifier<T> moveIdentifier;
+        private IDiff<T> diffMethod;
+
+        public Merger(IDiff<T> diffMethod = null, IMoveIdentifier<T> moveIdentifier = null)
+        {
+            if (diffMethod == null)
+                diffMethod = new OptimalDiff<T>();
+            this.diffMethod = diffMethod;
+
+            if (moveIdentifier == null)
+                moveIdentifier = new EditDistanceMoveIdentifier<T>();
+            this.moveIdentifier = moveIdentifier;
+        }
+
         // find Move actions in a list of Change objects (mutates the input list).
         public void find_moves<K>(List<IChange<K>> diff, bool first, IMoveIdentifier<K> identifier)
         {
@@ -159,19 +173,15 @@ namespace DeadDog.Merging
 
         #endregion
 
-        public static string merge(string ancestor, string a, string b)
-        {
-            return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
-        }
         public T[] merge(T[] ancestor, T[] a, T[] b)
         {
             // compute the diffs from the common ancestor
-            var diff_a = OptimalDiff<T>.Diff(ancestor, a);
-            var diff_b = OptimalDiff<T>.Diff(ancestor, b);
+            var diff_a = diffMethod.Diff(ancestor, a).ToList();
+            var diff_b = diffMethod.Diff(ancestor, b).ToList();
 
             // find Move actions
-            find_moves(diff_a, true);
-            find_moves(diff_b, false);
+            find_moves(diff_a, true, moveIdentifier);
+            find_moves(diff_b, false, moveIdentifier);
 
             // find conflicts and automatically resolve them where possible
             var conflicts = new List<string>();
