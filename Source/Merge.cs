@@ -149,7 +149,7 @@ namespace DeadDog.Merging
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (a.Position == b.Position1)
-                if (a.Value.Equals((b as Move<char[]>).Value2))
+                if (a.Value.Equals(b.Value2))
                     cm.RemoveA = true;
                 else
                     cm.AddConflict("A is inserting text at the same location that B is moving text to.");
@@ -171,7 +171,7 @@ namespace DeadDog.Merging
         {
             // Insert actions at the same location as Move destinations collide unless the text is the same
             if (b.Position == a.Position1)
-                if (b.Value.Equals((a as Move<char[]>).Value2))
+                if (b.Value.Equals(a.Value2))
                     cm.RemoveB = true;
                 else
                     cm.AddConflict("B is inserting text at the same location that A is moving text to.");
