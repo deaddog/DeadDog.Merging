@@ -221,13 +221,13 @@ namespace DeadDog.Merging
             {
                 if (actions[i] is Delete<T[]>)
                 {
-                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Substring(actions[i].Range.End + 1 + pos_offset);
+                    preliminary_merge = preliminary_merge.Subarray(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Subarray(actions[i].Range.End + 1 + pos_offset);
                     pos_offset -= actions[i].Range.Length;
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
                 }
                 else if (actions[i] is Insert<T[]>)
                 {
-                    preliminary_merge = preliminary_merge.Substring(0, actions[i].Position + pos_offset) + actions[i].Value + preliminary_merge.Substring(actions[i].Position + pos_offset);
+                    preliminary_merge = preliminary_merge.Subarray(0, actions[i].Position + pos_offset) + actions[i].Value + preliminary_merge.Subarray(actions[i].Position + pos_offset);
                     pos_offset += actions[i].Value.Length;
                     offset_changes_ab.AddOffset(actions[i].Position, actions[i].Value.Length);
                 }
@@ -240,7 +240,7 @@ namespace DeadDog.Merging
                     Range range = offset_changes_ab.Offset(actions[i].Range);
 
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
-                    preliminary_merge = preliminary_merge.Substring(0, range.Start) + preliminary_merge.Substring(range.End + 1);
+                    preliminary_merge = preliminary_merge.Subarray(0, range.Start) + preliminary_merge.Subarray(range.End + 1);
                 }
 
             // perform the "add" part of the moves
@@ -255,17 +255,17 @@ namespace DeadDog.Merging
                     {
                         text_a = m.Value2;
                         var range = offset_changes_b.Offset(m.Range1);
-                        text_b = b.Substring(range.Start, range.End + 1);
+                        text_b = b.Subarray(range.Start, range.End + 1);
                     }
                     else
                     {
                         text_b = m.Value2;
                         var range = offset_changes_a.Offset(actions[i].Range);
-                        text_a = a.Substring(range.Start, range.End + 1);
+                        text_a = a.Subarray(range.Start, range.End + 1);
                     }
                     var text = merge(text_a, text_b, text_ancestor);
                     offset_changes_ab.AddOffset(actions[i].Position, text.Length);
-                    preliminary_merge = preliminary_merge.Substring(0, pos_a) + text + preliminary_merge.Substring(pos_a);
+                    preliminary_merge = preliminary_merge.Subarray(0, pos_a) + text + preliminary_merge.Subarray(pos_a);
                 }
             return preliminary_merge;
         }

@@ -43,7 +43,7 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old + offset_b, length);
                     int pos_a = pos_a_old;
 
-                    T[] sub = b.GetRange(r);
+                    T[] sub = b.Subarray(r);
                     changes.Add(new Insert<T[]>(sub, pos_a, r));
                     offset_b += length;
                 }
@@ -63,7 +63,7 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old, length);
                     int pos_b = pos_a_old + offset_b;
 
-                    T[] sub = a.GetRange(r);
+                    T[] sub = a.Subarray(r);
                     changes.Add(new Delete<T[]>(sub, pos_b, r));
                     offset_b -= length;
                 }
