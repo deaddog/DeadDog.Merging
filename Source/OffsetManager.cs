@@ -38,7 +38,7 @@ namespace DeadDog.Merging
             foreach (var change in collection)
             {
                 if (!(change is Insert<T[]>))
-                    offset_changes.AddOffset(change.Range.Start, change.Range.Start - change.Range.End);
+                    offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
                 if (!(change is Delete<T[]>))
                     offset_changes.AddOffset(change.Position, change.Value.Length);
@@ -53,7 +53,7 @@ namespace DeadDog.Merging
             foreach (var change in collection)
             {
                 if (change is Delete<T[]>)
-                    offset_changes.AddOffset(change.Range.Start, change.Range.Start - change.Range.End);
+                    offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
                 if (change is Insert<T[]>)
                     offset_changes.AddOffset(change.Position, change.Value.Length);
