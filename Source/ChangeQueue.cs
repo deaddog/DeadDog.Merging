@@ -11,20 +11,20 @@ namespace DeadDog.Merging
         private List<IChange<T>> actions;
 
         #region Initial sorting
-        private static int ancestorPositionSort<T>(IChange<T> a, IChange<T> b)
+        private static int ancestorPositionSort(IChange<T> a, IChange<T> b)
         {
             return ancestorPosition((dynamic)a).CompareTo(ancestorPosition((dynamic)b));
         }
 
-        private static int ancestorPosition<T>(Delete<T> delete)
+        private static int ancestorPosition(Delete<T> delete)
         {
             return delete.Range.Start;
         }
-        private static int ancestorPosition<T>(Insert<T> delete)
+        private static int ancestorPosition(Insert<T> delete)
         {
             return delete.Position;
         }
-        private static int ancestorPosition<T>(Move<T> delete)
+        private static int ancestorPosition(Move<T> delete)
         {
             return delete.Position1;
         }

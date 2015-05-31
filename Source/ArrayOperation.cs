@@ -25,12 +25,12 @@ namespace DeadDog.Merging
         public abstract int Length { get; }
         public abstract void CopyTo(T[] array, int index);
 
-        public class rangeOp<T> : ArrayOperation<T>
+        public class rangeOp<T2> : ArrayOperation<T2>
         {
-            public readonly T[] array;
+            public readonly T2[] array;
             private Range range;
 
-            public rangeOp(T[] array, Range range)
+            public rangeOp(T2[] array, Range range)
             {
                 this.array = array;
                 this.range = range;
@@ -40,7 +40,7 @@ namespace DeadDog.Merging
             {
                 get { return range.Length; }
             }
-            public override void CopyTo(T[] array, int index)
+            public override void CopyTo(T2[] array, int index)
             {
                 if (range.Length == this.array.Length)
                     this.array.CopyTo(array, index);
@@ -52,21 +52,21 @@ namespace DeadDog.Merging
             }
         }
 
-        public class conOp<T> : ArrayOperation<T>
+        public class conOp<T2> : ArrayOperation<T2>
         {
-            private List<ArrayOperation<T>> operations;
+            private List<ArrayOperation<T2>> operations;
 
-            public conOp(ArrayOperation<T> a, ArrayOperation<T> b)
+            public conOp(ArrayOperation<T2> a, ArrayOperation<T2> b)
             {
-                this.operations = new List<ArrayOperation<T>>();
+                this.operations = new List<ArrayOperation<T2>>();
 
-                if (a is conOp<T>)
-                    this.operations.AddRange((a as conOp<T>).operations);
+                if (a is conOp<T2>)
+                    this.operations.AddRange((a as conOp<T2>).operations);
                 else
                     this.operations.Add(a);
 
-                if (b is conOp<T>)
-                    this.operations.AddRange((b as conOp<T>).operations);
+                if (b is conOp<T2>)
+                    this.operations.AddRange((b as conOp<T2>).operations);
                 else
                     this.operations.Add(b);
             }
@@ -75,7 +75,7 @@ namespace DeadDog.Merging
             {
                 get { return operations.Sum(x => x.Length); }
             }
-            public override void CopyTo(T[] array, int index)
+            public override void CopyTo(T2[] array, int index)
             {
                 for (int i = 0; i < operations.Count; i++)
                 {
