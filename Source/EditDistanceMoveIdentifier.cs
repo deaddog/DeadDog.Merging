@@ -32,7 +32,7 @@ namespace DeadDog.Merging
             if (Math.Max(delete.Value.Length, insert.Value.Length) < minMoveLength)
                 return null;
 
-            double normalized_dist = (double)EditDistance.GetDistance(delete.Value, insert.Value) / (double)Math.Max(delete.Value.Length, insert.Value.Length);
+            double normalized_dist = EditDistance.GetNormalizedDistance(delete.Value, insert.Value);
 
             if (normalized_dist <= maxMoveDistance)
                 return normalized_dist;

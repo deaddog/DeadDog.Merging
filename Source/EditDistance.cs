@@ -12,6 +12,15 @@ namespace DeadDog.Merging
         {
             return getOperationsTable(a, b, allowReplace)[0, 0];
         }
+        public static double GetNormalizedDistance<T>(T[] a, T[] b, bool allowReplace = true) where T : IEquatable<T>
+        {
+            double distance = GetDistance(a,b,allowReplace);
+            if (allowReplace)
+                return distance / (double)Math.Max(a.Length, b.Length);
+            else
+                return distance / (double)(a.Length + b.Length);
+        }
+
         public static Tuple<int, ChangeType>[] GetOperations<T>(T[] a, T[] b) where T : IEquatable<T>
         {
             int[,] d3 = getOperationsTable(a, b, false);
@@ -46,7 +55,6 @@ namespace DeadDog.Merging
             }
             return changes.ToArray();
         }
-
         private static int[,] getOperationsTable<T>(T[] a, T[] b, bool allowReplace)
         {
             int[,] operations = new int[a.Length + 1, b.Length + 1];
