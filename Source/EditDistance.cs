@@ -55,7 +55,7 @@ namespace DeadDog.Merging
             }
             return changes.ToArray();
         }
-        private static int[,] getOperationsTable<T>(T[] a, T[] b, bool allowReplace)
+        private static int[,] getOperationsTable<T>(T[] a, T[] b, bool allowReplace) where T : IEquatable<T>
         {
             int[,] operations = new int[a.Length + 1, b.Length + 1];
 
