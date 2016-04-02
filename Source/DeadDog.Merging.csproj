@@ -42,6 +42,7 @@
     <Compile Include="ArrayExtension.cs" />
     <Compile Include="ArrayOperation.cs" />
     <Compile Include="ChangeQueue.cs" />
+    <Compile Include="Conflict.cs" />
     <Compile Include="EditDistance.cs" />
     <Compile Include="EditDistanceMoveIdentifier.cs" />
     <Compile Include="IChange.cs" />
