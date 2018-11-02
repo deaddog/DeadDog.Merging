@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
@@ -95,80 +93,123 @@ namespace DeadDog.Merging
             }
         }
 
-        private void resolveConflict(Delete<T> a, Delete<T> b, ConflictManager cm)
+        private void resolveConflict(IChange<T> a, IChange<T> b, ConflictManager cm)
         {
-            // if two Delete actions overlap, take the union of their ranges
-            if (a.Range.OverlapsWith(b.Range))
+            switch (a)
             {
-                a.Range = Range.Join(a.Range, b.Range);
-                cm.RemoveB = true;
+                case Delete<T> delete:
+                    resolveConflict(delete, b, cm);
+                    break;
+
+                case Insert<T> insert:
+                    resolveConflict(insert, b, cm);
+                    break;
+
+                case Move<T> move:
+                    resolveConflict(move, b, cm);
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unknown change type: {a.GetType().Name}.");
             }
         }
-        private void resolveConflict(Delete<T> a, Insert<T> b, ConflictManager cm)
-        {
-            // Insert actions inside the range of Delete actions collide
-            if (a.Range.Contains(b.Position, includeStart: false))
-                cm.AddConflict("[A] is deleting text that [B] is inserting into.");
-        }
-        private void resolveConflict(Delete<T> a, Move<T> b, ConflictManager cm)
-        {
-            // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-            if (!b.Range1.Contains(a.Range))
-            { }
-            else if (a.Range.Contains(b.Range1, includeStart: false))
-                cm.AddConflict("[A] is deleting text that [B] is moving.");
-            else if (a.Range.OverlapsWith(b.Range1))
-                cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
 
-            // Move destinations inside the range of Delete actions collide
-            if (a.Range.Contains(b.Position1, includeStart: false))
-                cm.AddConflict("[A] is deleting text that [B] is moving text into.");
-        }
+        private void resolveConflict(Delete<T> a, IChange<T> b, ConflictManager cm)
+        {
+            switch (b)
+            {
+                case Delete<T> delete:
+                    // if two Delete actions overlap, take the union of their ranges
+                    if (a.Range.OverlapsWith(delete.Range))
+                    {
+                        a.Range = Range.Join(a.Range, delete.Range);
+                        cm.RemoveB = true;
+                    }
+                    break;
 
-        private void resolveConflict(Insert<T> a, Delete<T> b, ConflictManager cm)
-        {
-            resolveConflict(b, a, cm);
-            cm.Swap();
-        }
-        private void resolveConflict(Insert<T> a, Insert<T> b, ConflictManager cm)
-        {
-            // Insert actions at the same position collide unless the inserted text is the same
-            if (a.Position == b.Position)
-                if (a.Value.Equals(b.Value))
-                    cm.RemoveB = true;
-                else
-                    cm.AddConflict("[A] && [B] are inserting text at the same location.");
-        }
-        private void resolveConflict(Insert<T> a, Move<T> b, ConflictManager cm)
-        {
-            // Insert actions at the same location as Move destinations collide unless the text is the same
-            if (a.Position == b.Position1)
-                if (a.Value.Equals(b.Value2))
-                    cm.RemoveA = true;
-                else
-                    cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
-        }
+                case Insert<T> insert:
+                    // Insert actions inside the range of Delete actions collide
+                    if (a.Range.Contains(insert.Position, includeStart: false))
+                        cm.AddConflict("[A] is deleting text that [B] is inserting into.");
+                    break;
 
-        private void resolveConflict(Move<T> a, Delete<T> b, ConflictManager cm)
-        {
-            resolveConflict(b, a, cm);
-            cm.Swap();
-        }
-        private void resolveConflict(Move<T> a, Insert<T> b, ConflictManager cm)
-        {
-            resolveConflict(b, a, cm);
-            cm.Swap();
-        }
-        private void resolveConflict(Move<T> a, Move<T> b, ConflictManager cm)
-        {
-            // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-            if (a.Range1.OverlapsWith(b.Range1))
-                if (!(a.Range1.Contains(b.Range1) || b.Range1.Contains(a.Range1)))
-                    cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
+                case Move<T> move:
+                    // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
+                    if (!move.Range1.Contains(a.Range))
+                    { }
+                    else if (a.Range.Contains(move.Range1, includeStart: false))
+                        cm.AddConflict("[A] is deleting text that [B] is moving.");
+                    else if (a.Range.OverlapsWith(move.Range1))
+                        cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
 
-            // Move actions collide if their destination positions are the same
-            if (a.Position1 == b.Position1)
-                cm.AddConflict("[A] && [B] are moving text to the same location.");
+                    // Move destinations inside the range of Delete actions collide
+                    if (a.Range.Contains(move.Position1, includeStart: false))
+                        cm.AddConflict("[A] is deleting text that [B] is moving text into.");
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
+            }
+        }
+        private void resolveConflict(Insert<T> a, IChange<T> b, ConflictManager cm)
+        {
+            switch (b)
+            {
+                case Delete<T> delete:
+                    resolveConflict(delete, a, cm);
+                    cm.Swap();
+                    break;
+
+                case Insert<T> insert:
+                    // Insert actions at the same position collide unless the inserted text is the same
+                    if (a.Position == insert.Position)
+                        if (a.Value.Equals(insert.Value))
+                            cm.RemoveB = true;
+                        else
+                            cm.AddConflict("[A] && [B] are inserting text at the same location.");
+                    break;
+
+                case Move<T> move:
+                    // Insert actions at the same location as Move destinations collide unless the text is the same
+                    if (a.Position == move.Position1)
+                        if (a.Value.Equals(move.Value2))
+                            cm.RemoveA = true;
+                        else
+                            cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
+            }
+        }
+        private void resolveConflict(Move<T> a, IChange<T> b, ConflictManager cm)
+        {
+            switch (b)
+            {
+                case Delete<T> delete:
+                    resolveConflict(delete, a, cm);
+                    cm.Swap();
+                    break;
+
+                case Insert<T> insert:
+                    resolveConflict(insert, a, cm);
+                    cm.Swap();
+                    break;
+
+                case Move<T> move:
+                    // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
+                    if (a.Range1.OverlapsWith(move.Range1))
+                        if (!(a.Range1.Contains(move.Range1) || move.Range1.Contains(a.Range1)))
+                            cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
+
+                    // Move actions collide if their destination positions are the same
+                    if (a.Position1 == move.Position1)
+                        cm.AddConflict("[A] && [B] are moving text to the same location.");
+                    break;
+
+                default:
+                    throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
+            }
         }
 
         #endregion
@@ -190,7 +231,7 @@ namespace DeadDog.Merging
                 for (int j = 0; j < diff_b.Count; j++)
                 {
                     ConflictManager cm = new ConflictManager();
-                    resolveConflict((dynamic)diff_a[i], (dynamic)diff_b[j], cm);
+                    resolveConflict(diff_a[i], diff_b[j], cm);
 
                     conflicts.AddRange(cm.GetConflicts());
 

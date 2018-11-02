@@ -13,20 +13,20 @@ namespace DeadDog.Merging
         #region Initial sorting
         private static int ancestorPositionSort(IChange<T> a, IChange<T> b)
         {
-            return ancestorPosition((dynamic)a).CompareTo(ancestorPosition((dynamic)b));
+            return ancestorPosition(a).CompareTo(ancestorPosition(b));
         }
 
-        private static int ancestorPosition(Delete<T> delete)
+        private static int ancestorPosition(IChange<T> change)
         {
-            return delete.Range.Start;
-        }
-        private static int ancestorPosition(Insert<T> delete)
-        {
-            return delete.Position;
-        }
-        private static int ancestorPosition(Move<T> delete)
-        {
-            return delete.Position1;
+            switch (change)
+            {
+                case Delete<T> delete: return delete.Range.Start;
+                case Insert<T> insert: return insert.Position;
+                case Move<T> move: return move.Position1;
+
+                default:
+                    throw new ArgumentException($"Unknown change type: {change.GetType().Name}.");
+            }
         }
         #endregion
 
