@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace DeadDog.Merging
 {
@@ -10,25 +6,10 @@ namespace DeadDog.Merging
     {
         private List<IChange<T>> actions;
 
-        #region Initial sorting
         private static int ancestorPositionSort(IChange<T> a, IChange<T> b)
         {
-            return ancestorPosition(a).CompareTo(ancestorPosition(b));
+            return a.OldRange.Start.CompareTo(b.OldRange.Start);
         }
-
-        private static int ancestorPosition(IChange<T> change)
-        {
-            switch (change)
-            {
-                case Delete<T> delete: return delete.Range.Start;
-                case Insert<T> insert: return insert.Position;
-                case Move<T> move: return move.To.Position;
-
-                default:
-                    throw new ArgumentException($"Unknown change type: {change.GetType().Name}.");
-            }
-        }
-        #endregion
 
         public ChangeQueue(params IEnumerable<IChange<T>>[] collections)
         {

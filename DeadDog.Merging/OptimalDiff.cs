@@ -65,7 +65,7 @@ namespace DeadDog.Merging
                     int pos_b = pos_a_old + offset_b;
 
                     var sub = a.GetRange(r);
-                    changes.Add(new Delete<T>(sub, pos_b, r));
+                    changes.Add(new Delete<T>(sub, r, pos_b));
                     offset_b -= length;
                 }
             }
