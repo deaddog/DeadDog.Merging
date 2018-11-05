@@ -1,62 +1,73 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DeadDog.Merging
 {
-    public struct Range
+    public struct Range : IEquatable<Range>
     {
-        private int start, end;
-
         public Range(int start, int end)
         {
-            this.start = start;
-            this.end = end;
+            if (end < start)
+                throw new ArgumentException("End must be greater than or equal to start.");
+
+            Start = start;
+            End = end;
+        }
+
+        public static bool operator ==(Range r1, Range r2)
+        {
+            return EqualityComparer<Range>.Default.Equals(r1, r2);
+        }
+        public static bool operator !=(Range r1, Range r2)
+        {
+            return !EqualityComparer<Range>.Default.Equals(r1, r2);
         }
 
         public static Range FromStartLength(int start, int length)
         {
-            return new Range(start, start + length - 1);
+            return new Range(start, start + length);
         }
 
         public bool OverlapsWith(Range range)
         {
-            return (this.start <= range.start && this.end >= range.start) ||
-                   (this.start <= range.end && this.end >= range.end) ||
+            return (Start <= range.Start && End > range.Start) ||
+                   (Start < range.End && End > range.End) ||
                    range.Contains(this);
         }
         public bool Contains(Range range, bool includeStart = true)
         {
-            return (includeStart ? (this.start <= range.start) : (this.start < range.start)) && this.end >= range.end;
+            return (includeStart ? (Start <= range.Start) : (Start < range.Start)) && End >= range.End;
         }
         public bool Contains(int position, bool includeStart = true)
         {
-            return (includeStart ? (this.start <= position) : (this.start < position)) && this.end >= position;
+            return Contains(new Range(position, position), includeStart);
         }
 
         public static Range Join(Range range1, Range range2)
         {
-            return new Range(Math.Min(range1.start, range2.start), Math.Max(range1.end, range2.end));
+            return new Range(Math.Min(range1.Start, range2.Start), Math.Max(range1.End, range2.End));
         }
 
-        public int Start
-        {
-            get { return start; }
-        }
-        public int End
-        {
-            get { return end; }
-        }
-        public int Length
-        {
-            get { return end - start + 1; }
-        }
+        public int Start { get; }
+        public int End { get; }
+        public int Length => End - Start;
 
         public override string ToString()
         {
-            return "(" + start + ", " + end + ")";
+            return $"({Start}, {End})";
+        }
+
+        public override int GetHashCode()
+        {
+            return Start.GetHashCode() ^ End.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            return obj is Range && Equals((Range)obj);
+        }
+        public bool Equals(Range other)
+        {
+            return Start == other.Start && End == other.End;
         }
     }
 }
