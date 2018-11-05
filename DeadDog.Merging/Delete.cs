@@ -1,46 +1,22 @@
 ﻿using System;
+using System.Collections.Immutable;
 
 namespace DeadDog.Merging
 {
     public class Delete<T> : IChange<T>
     {
-        private T[] value;
-        private int pos;
-        private Range range;
-
-        public Delete<T2> Clone<T2>(T2[] newValue)
+        public Delete(IImmutableList<T> value, int position, Range range)
         {
-            return new Delete<T2>(newValue, this.pos, this.range);
-        }
-        IChange<T2> IChange<T>.Clone<T2>(T2[] newValue)
-        {
-            return this.Clone(newValue);
+            Value = value ?? throw new ArgumentNullException(nameof(value));
+            Position = position;
+            Range = range;
         }
 
-        public Delete(T[] value, int pos, Range range)
-        {
-            this.value = value;
-            this.pos = pos;
-            this.range = range;
-        }
+        public IImmutableList<T> Value { get; }
 
-        public T[] Value
-        {
-            get { return value; }
-        }
-        public int Position
-        {
-            get { return pos; }
-        }
-        public Range Range
-        {
-            get { return range; }
-            set { range = value; }
-        }
+        public int Position { get; set; }
+        public Range Range { get; set; }
 
-        public override string ToString()
-        {
-            return string.Format("Delete(\"{0}\", {2}, {1})", value, pos, range);
-        }
+        public override string ToString() => $@"Delete (""{Value}"", {Range}, {Position})";
     }
 }
