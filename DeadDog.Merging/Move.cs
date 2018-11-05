@@ -14,14 +14,12 @@ namespace DeadDog.Merging
 
         IImmutableList<T> IChange<T>.Value => From.Value;
 
-        int IChange<T>.Position => To.Position;
-        Range IChange<T>.Range => From.Range;
+        Range IChange<T>.OldRange => From.OldRange;
+        Range IChange<T>.NewRange => To.NewRange;
 
         public Delete<T> From { get; }
         public Insert<T> To { get; }
 
         public bool First { get; }
-
-        public override string ToString() => $"Move(\"{From}\" -> \"{To}\")";
     }
 }

@@ -5,18 +5,17 @@ namespace DeadDog.Merging
 {
     public class Delete<T> : IChange<T>
     {
-        public Delete(IImmutableList<T> value, int position, Range range)
+        public Delete(IImmutableList<T> value, Range deletedRange, int newPosition)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
-            Position = position;
-            Range = range;
+
+            OldRange = deletedRange;
+            NewRange = Range.FromStartLength(newPosition, 0);
         }
 
         public IImmutableList<T> Value { get; }
 
-        public int Position { get; set; }
-        public Range Range { get; set; }
-
-        public override string ToString() => $@"Delete (""{Value}"", {Range}, {Position})";
+        public Range OldRange { get; set; }
+        public Range NewRange { get; }
     }
 }

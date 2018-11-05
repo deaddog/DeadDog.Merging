@@ -6,7 +6,7 @@ namespace DeadDog.Merging
     {
         IImmutableList<T> Value { get; }
 
-        int Position { get; }
-        Range Range { get; }
+        Range OldRange { get; }
+        Range NewRange { get; }
     }
 }
