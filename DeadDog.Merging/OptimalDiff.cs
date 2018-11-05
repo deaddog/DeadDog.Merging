@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,10 +15,10 @@ namespace DeadDog.Merging
 
         public IEnumerable<IChange<T>> Diff(IEnumerable<T> origin, IEnumerable<T> modified)
         {
-            return str_diff(origin.ToArray(), modified.ToArray());
+            return str_diff(origin.ToImmutableList(), modified.ToImmutableList());
         }
 
-        private List<IChange<T>> str_diff(T[] a, T[] b)
+        private List<IChange<T>> str_diff(IImmutableList<T> a, IImmutableList<T> b)
         {
             var diff = EditDistance.GetOperations(a, b);
             Array.Sort(diff, (x, y) => x.Item1.CompareTo(y.Item1));
@@ -43,7 +44,7 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old + offset_b, length);
                     int pos_a = pos_a_old;
 
-                    T[] sub = b.Subarray(r);
+                    var sub = b.GetRange(r);
                     changes.Add(new Insert<T>(sub, pos_a, r));
                     offset_b += length;
                 }
@@ -63,7 +64,7 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old, length);
                     int pos_b = pos_a_old + offset_b;
 
-                    T[] sub = a.Subarray(r);
+                    var sub = a.GetRange(r);
                     changes.Add(new Delete<T>(sub, pos_b, r));
                     offset_b -= length;
                 }

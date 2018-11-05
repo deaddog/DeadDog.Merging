@@ -45,7 +45,7 @@ namespace DeadDog.Merging
                     offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
                 if (!(change is Delete<T>))
-                    offset_changes.AddOffset(change.Position, change.Value.Length);
+                    offset_changes.AddOffset(change.Position, change.Value.Count);
             }
 
             return offset_changes;
@@ -60,7 +60,7 @@ namespace DeadDog.Merging
                     offset_changes.AddOffset(change.Range.Start, -change.Range.Length);
 
                 if (change is Insert<T>)
-                    offset_changes.AddOffset(change.Position, change.Value.Length);
+                    offset_changes.AddOffset(change.Position, change.Value.Count);
             }
 
             return offset_changes;

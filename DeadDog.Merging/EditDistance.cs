@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,47 +9,47 @@ namespace DeadDog.Merging
 {
     public static class EditDistance
     {
-        public static int GetDistance<T>(T[] a, T[] b, bool allowReplace = true) where T : IEquatable<T>
+        public static int GetDistance<T>(IImmutableList<T> a, IImmutableList<T> b, bool allowReplace = true) where T : IEquatable<T>
         {
             return getOperationsTable(a, b, allowReplace)[0, 0];
         }
-        public static double GetNormalizedDistance<T>(T[] a, T[] b, bool allowReplace = true) where T : IEquatable<T>
+        public static double GetNormalizedDistance<T>(IImmutableList<T> a, IImmutableList<T> b, bool allowReplace = true) where T : IEquatable<T>
         {
             double distance = GetDistance(a, b, allowReplace);
             if (allowReplace)
-                return distance / (double)Math.Max(a.Length, b.Length);
+                return distance / (double)Math.Max(a.Count, b.Count);
             else
-                return distance / (double)(a.Length + b.Length);
+                return distance / (double)(a.Count + b.Count);
         }
 
-        public static int GetDistance<T>(T[] a, T[] b, Func<T, T, bool> equals, bool allowReplace = true)
+        public static int GetDistance<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals, bool allowReplace = true)
         {
             return getOperationsTable(a, b, equals, allowReplace)[0, 0];
         }
-        public static double GetNormalizedDistance<T>(T[] a, T[] b, Func<T, T, bool> equals, bool allowReplace = true)
+        public static double GetNormalizedDistance<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals, bool allowReplace = true)
         {
             double distance = GetDistance(a, b, equals, allowReplace);
             if (allowReplace)
-                return distance / (double)Math.Max(a.Length, b.Length);
+                return distance / (double)Math.Max(a.Count, b.Count);
             else
-                return distance / (double)(a.Length + b.Length);
+                return distance / (double)(a.Count + b.Count);
         }
 
-        public static Tuple<int, ChangeType>[] GetOperations<T>(T[] a, T[] b) where T : IEquatable<T>
+        public static Tuple<int, ChangeType>[] GetOperations<T>(IImmutableList<T> a, IImmutableList<T> b) where T : IEquatable<T>
         {
             int[,] d3 = getOperationsTable(a, b, false);
             List<Tuple<int, ChangeType>> changes = new List<Tuple<int, ChangeType>>();
             int si = 0, fi = 0;
-            int ls = a.Length, lf = b.Length;
+            int ls = a.Count, lf = b.Count;
 
-            while (si != a.Length || fi != b.Length)
+            while (si != a.Count || fi != b.Count)
             {
-                if (si == a.Length)
+                if (si == a.Count)
                 {
                     changes.Add(Tuple.Create(si, ChangeType.Insertion));
                     fi++;
                 }
-                else if (fi == b.Length)
+                else if (fi == b.Count)
                 {
                     changes.Add(Tuple.Create(si, ChangeType.Deletion));
                     si++;
@@ -68,21 +69,21 @@ namespace DeadDog.Merging
             }
             return changes.ToArray();
         }
-        public static Tuple<int, ChangeType>[] GetOperations<T>(T[] a, T[] b, Func<T, T, bool> equals)
+        public static Tuple<int, ChangeType>[] GetOperations<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals)
         {
             int[,] d3 = getOperationsTable(a, b, equals, false);
             List<Tuple<int, ChangeType>> changes = new List<Tuple<int, ChangeType>>();
             int si = 0, fi = 0;
-            int ls = a.Length, lf = b.Length;
+            int ls = a.Count, lf = b.Count;
 
-            while (si != a.Length || fi != b.Length)
+            while (si != a.Count || fi != b.Count)
             {
-                if (si == a.Length)
+                if (si == a.Count)
                 {
                     changes.Add(Tuple.Create(si, ChangeType.Insertion));
                     fi++;
                 }
-                else if (fi == b.Length)
+                else if (fi == b.Count)
                 {
                     changes.Add(Tuple.Create(si, ChangeType.Deletion));
                     si++;
@@ -103,17 +104,17 @@ namespace DeadDog.Merging
             return changes.ToArray();
         }
 
-        private static int[,] getOperationsTable<T>(T[] a, T[] b, bool allowReplace) where T : IEquatable<T>
+        private static int[,] getOperationsTable<T>(IImmutableList<T> a, IImmutableList<T> b, bool allowReplace) where T : IEquatable<T>
         {
-            int[,] operations = new int[a.Length + 1, b.Length + 1];
+            int[,] operations = new int[a.Count + 1, b.Count + 1];
 
-            for (int i = 0; i <= a.Length; i++)
-                operations[i, b.Length] = a.Length - i;
-            for (int i = 0; i <= b.Length; i++)
-                operations[a.Length, i] = b.Length - i;
+            for (int i = 0; i <= a.Count; i++)
+                operations[i, b.Count] = a.Count - i;
+            for (int i = 0; i <= b.Count; i++)
+                operations[a.Count, i] = b.Count - i;
 
-            for (int j = b.Length - 1; j >= 0; j--)
-                for (int i = a.Length - 1; i >= 0; i--)
+            for (int j = b.Count - 1; j >= 0; j--)
+                for (int i = a.Count - 1; i >= 0; i--)
                     if (a[i].Equals(b[j]))
                         operations[i, j] = operations[i + 1, j + 1];
                     else if (allowReplace)
@@ -123,17 +124,17 @@ namespace DeadDog.Merging
 
             return operations;
         }
-        private static int[,] getOperationsTable<T>(T[] a, T[] b, Func<T, T, bool> equals, bool allowReplace)
+        private static int[,] getOperationsTable<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals, bool allowReplace)
         {
-            int[,] operations = new int[a.Length + 1, b.Length + 1];
+            int[,] operations = new int[a.Count + 1, b.Count + 1];
 
-            for (int i = 0; i <= a.Length; i++)
-                operations[i, b.Length] = a.Length - i;
-            for (int i = 0; i <= b.Length; i++)
-                operations[a.Length, i] = b.Length - i;
+            for (int i = 0; i <= a.Count; i++)
+                operations[i, b.Count] = a.Count - i;
+            for (int i = 0; i <= b.Count; i++)
+                operations[a.Count, i] = b.Count - i;
 
-            for (int j = b.Length - 1; j >= 0; j--)
-                for (int i = a.Length - 1; i >= 0; i--)
+            for (int j = b.Count - 1; j >= 0; j--)
+                for (int i = a.Count - 1; i >= 0; i--)
                     if (equals(a[i], b[j]))
                         operations[i, j] = operations[i + 1, j + 1];
                     else if (allowReplace)

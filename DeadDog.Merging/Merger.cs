@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace DeadDog.Merging
@@ -30,10 +31,13 @@ namespace DeadDog.Merging
             for (int i = 0; i < firstInsert; i++)
                 for (int j = firstInsert; j < count; j++)
                 {
-                    double? weight = identifier.MoveWeight(diff[i] as Delete<K>, diff[j] as Insert<K>);
+                    var from = diff[i] as Delete<K>;
+                    var to = diff[j] as Insert<K>;
+
+                    double? weight = identifier.MoveWeight(from, to);
                     if (weight.HasValue)
                     {
-                        diff.Add(new Move<K>(diff[i].Value, diff[i].Range, diff[j].Position, diff[j].Value, diff[j].Range, diff[i].Position, first));
+                        diff.Add(new Move<K>(from, to, first));
 
                         diff.RemoveAt(j--);
                         diff.RemoveAt(i--);
@@ -135,15 +139,15 @@ namespace DeadDog.Merging
 
                 case Move<T> move:
                     // Delete actions that overlap with but are not fully contained within PsuedoMove sources collide
-                    if (!move.Range1.Contains(a.Range))
+                    if (!move.From.Range.Contains(a.Range))
                     { }
-                    else if (a.Range.Contains(move.Range1, includeStart: false))
+                    else if (a.Range.Contains(move.From.Range, includeStart: false))
                         cm.AddConflict("[A] is deleting text that [B] is moving.");
-                    else if (a.Range.OverlapsWith(move.Range1))
+                    else if (a.Range.OverlapsWith(move.From.Range))
                         cm.AddConflict("[B] is moving only part of some text that [A] is deleting.");
 
                     // Move destinations inside the range of Delete actions collide
-                    if (a.Range.Contains(move.Position1, includeStart: false))
+                    if (a.Range.Contains(move.To.Range, includeStart: false))
                         cm.AddConflict("[A] is deleting text that [B] is moving text into.");
                     break;
 
@@ -171,8 +175,8 @@ namespace DeadDog.Merging
 
                 case Move<T> move:
                     // Insert actions at the same location as Move destinations collide unless the text is the same
-                    if (a.Position == move.Position1)
-                        if (a.Value.Equals(move.Value2))
+                    if (a.Position == move.To.Position)
+                        if (a.Value.Equals(move.To.Value))
                             cm.RemoveA = true;
                         else
                             cm.AddConflict("[A] is inserting text at the same location that [B] is moving text to.");
@@ -198,12 +202,12 @@ namespace DeadDog.Merging
 
                 case Move<T> move:
                     // PsuedoMove actions collide if their source ranges overlap unless one is fully contained in the other
-                    if (a.Range1.OverlapsWith(move.Range1))
-                        if (!(a.Range1.Contains(move.Range1) || move.Range1.Contains(a.Range1)))
+                    if (a.From.Range.OverlapsWith(move.From.Range))
+                        if (!(a.From.Range.Contains(move.From.Range) || move.From.Range.Contains(a.From.Range)))
                             cm.AddConflict("A text move by [A] overlaps with a text move by [B].");
 
                     // Move actions collide if their destination positions are the same
-                    if (a.Position1 == move.Position1)
+                    if (a.To.Position == move.To.Position)
                         cm.AddConflict("[A] && [B] are moving text to the same location.");
                     break;
 
@@ -214,7 +218,7 @@ namespace DeadDog.Merging
 
         #endregion
 
-        public T[] merge(T[] ancestor, T[] a, T[] b)
+        public IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
         {
             // compute the diffs from the common ancestor
             var diff_a = diffMethod.Diff(ancestor, a).ToList();
@@ -257,21 +261,27 @@ namespace DeadDog.Merging
             var offset_changes_b = OffsetManager.Construct(diff_b);
 
             // compute the preliminary merge
-            T[] preliminary_merge = (T[])ancestor.Clone();
+            var preliminary_merge = ancestor.ToImmutableList();
             int pos_offset = 0;
             for (int i = 0; i < actions.Count; i++)
             {
                 if (actions[i] is Delete<T>)
                 {
-                    preliminary_merge = preliminary_merge.Subarray(0, actions[i].Range.Start + pos_offset) + preliminary_merge.Subarray(actions[i].Range.End + 1 + pos_offset);
+                    var pre = preliminary_merge.GetRange(0, actions[i].Range.Start + pos_offset);
+                    var post = preliminary_merge.GetRange(actions[i].Range.End + 1 + pos_offset);
+
+                    preliminary_merge = pre.AddRange(post);
                     pos_offset -= actions[i].Range.Length;
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
                 }
                 else if (actions[i] is Insert<T>)
                 {
-                    preliminary_merge = preliminary_merge.Subarray(0, actions[i].Position + pos_offset) + actions[i].Value + preliminary_merge.Subarray(actions[i].Position + pos_offset);
-                    pos_offset += actions[i].Value.Length;
-                    offset_changes_ab.AddOffset(actions[i].Position, actions[i].Value.Length);
+                    var pre = preliminary_merge.GetRange(0, actions[i].Position + pos_offset);
+                    var post = preliminary_merge.GetRange(actions[i].Position + pos_offset);
+
+                    preliminary_merge = pre.AddRange(actions[i].Value).AddRange(post);
+                    pos_offset += actions[i].Value.Count;
+                    offset_changes_ab.AddOffset(actions[i].Position, actions[i].Value.Count);
                 }
             }
 
@@ -282,7 +292,9 @@ namespace DeadDog.Merging
                     Range range = offset_changes_ab.Offset(actions[i].Range);
 
                     offset_changes_ab.AddOffset(actions[i].Range.Start, -actions[i].Range.Length);
-                    preliminary_merge = preliminary_merge.Subarray(0, range.Start) + preliminary_merge.Subarray(range.End + 1);
+                    var pre = preliminary_merge.GetRange(0, range.Start);
+                    var post = preliminary_merge.GetRange(range.End + 1);
+                    preliminary_merge = pre.AddRange(post);
                 }
 
             // perform the "add" part of the moves
@@ -292,22 +304,26 @@ namespace DeadDog.Merging
                     var m = actions[i] as Move<T>;
                     int pos_a = offset_changes_ab.Offset(actions[i].Position);
                     var text_ancestor = actions[i].Value;
-                    T[] text_a, text_b;
+                    IImmutableList<T> text_a, text_b;
                     if (m.First)
                     {
-                        text_a = m.Value2;
-                        var range = offset_changes_b.Offset(m.Range1);
-                        text_b = b.Subarray(range.Start, range.End + 1);
+                        text_a = m.To.Value;
+                        var range = offset_changes_b.Offset(m.From.Range);
+                        text_b = b.GetRange(range.Start, range.End + 1);
                     }
                     else
                     {
-                        text_b = m.Value2;
+                        text_b = m.To.Value;
                         var range = offset_changes_a.Offset(actions[i].Range);
-                        text_a = a.Subarray(range.Start, range.End + 1);
+                        text_a = a.GetRange(range.Start, range.End + 1);
                     }
                     var text = merge(text_a, text_b, text_ancestor);
-                    offset_changes_ab.AddOffset(actions[i].Position, text.Length);
-                    preliminary_merge = preliminary_merge.Subarray(0, pos_a) + text + preliminary_merge.Subarray(pos_a);
+                    offset_changes_ab.AddOffset(actions[i].Position, text.Count);
+
+                    var pre = preliminary_merge.GetRange(0, pos_a);
+                    var post = preliminary_merge.GetRange(pos_a);
+
+                    preliminary_merge = pre.AddRange(text).AddRange(post);
                 }
             return preliminary_merge;
         }
@@ -321,7 +337,7 @@ namespace DeadDog.Merging
         }
         public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
         {
-            return new Merger<T>(null, null).merge(ancestor, a, b);
+            return new Merger<T>(null, null).merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
         }
     }
 }

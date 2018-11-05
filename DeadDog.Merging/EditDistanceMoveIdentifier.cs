@@ -29,7 +29,7 @@ namespace DeadDog.Merging
 
         public double? MoveWeight(Delete<T> delete, Insert<T> insert)
         {
-            if (Math.Max(delete.Value.Length, insert.Value.Length) < minMoveLength)
+            if (Math.Max(delete.Value.Count, insert.Value.Count) < minMoveLength)
                 return null;
 
             double normalized_dist = EditDistance.GetNormalizedDistance(delete.Value, insert.Value);

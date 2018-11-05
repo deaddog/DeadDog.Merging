@@ -22,7 +22,7 @@ namespace DeadDog.Merging
             {
                 case Delete<T> delete: return delete.Range.Start;
                 case Insert<T> insert: return insert.Position;
-                case Move<T> move: return move.Position1;
+                case Move<T> move: return move.To.Position;
 
                 default:
                     throw new ArgumentException($"Unknown change type: {change.GetType().Name}.");
