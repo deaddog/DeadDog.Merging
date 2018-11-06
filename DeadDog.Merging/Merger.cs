@@ -21,32 +21,30 @@ namespace DeadDog.Merging
             this.moveIdentifier = moveIdentifier;
         }
 
-        // find Move actions in a list of Change objects (mutates the input list).
-        public void find_moves<K>(List<IChange<K>> diff, bool first, IMoveIdentifier<K> identifier)
+        private static IEnumerable<IChange<T>> WithMoves(IImmutableList<IChange<T>> changes, bool first, IMoveIdentifier<T> moveIdentifier)
         {
-            diff.Sort((x, y) => x.GetType().Equals(y.GetType()) ? 0 : (x is Delete<K> ? -1 : 1));
-            int firstInsert = diff.FindIndex(x => x is Insert<K>);
-            int count = diff.Count;
+            var inserts = changes.OfType<Insert<T>>().ToImmutableList();
+            var deletes = changes.OfType<Delete<T>>().ToImmutableList();
+            var moves = ImmutableList<Move<T>>.Empty;
 
-            for (int i = 0; i < firstInsert; i++)
-                for (int j = firstInsert; j < count; j++)
+            for (int i = 0; i < inserts.Count; i++)
+                for (int d = 0; d < deletes.Count; d++)
                 {
-                    var from = diff[i] as Delete<K>;
-                    var to = diff[j] as Insert<K>;
-
-                    double? weight = identifier.MoveWeight(from, to);
+                    var weight = moveIdentifier.MoveWeight(deletes[i], inserts[i]);
                     if (weight.HasValue)
                     {
-                        diff.Add(new Move<K>(from, to, first));
-
-                        diff.RemoveAt(j--);
-                        diff.RemoveAt(i--);
-                        firstInsert--;
-                        count -= 2;
+                        moves = moves.Add(new Move<T>(deletes[d], inserts[i], first));
+                        inserts = inserts.RemoveAt(i--);
+                        deletes = deletes.RemoveAt(d--);
 
                         break;
                     }
                 }
+
+            return ImmutableList<IChange<T>>.Empty
+                .AddRange(deletes)
+                .AddRange(inserts)
+                .AddRange(moves);
         }
 
         private class ConflictManager
@@ -217,12 +215,11 @@ namespace DeadDog.Merging
         public IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
         {
             // compute the diffs from the common ancestor
-            var diff_a = diffMethod.Diff(ancestor, a).ToList();
-            var diff_b = diffMethod.Diff(ancestor, b).ToList();
+            var diff_a = diffMethod.Diff(ancestor, a).ToImmutableList();
+            var diff_b = diffMethod.Diff(ancestor, b).ToImmutableList();
 
-            // find Move actions
-            find_moves(diff_a, true, moveIdentifier);
-            find_moves(diff_b, false, moveIdentifier);
+            diff_a = WithMoves(diff_a, true, moveIdentifier).ToImmutableList();
+            diff_b = WithMoves(diff_b, false, moveIdentifier).ToImmutableList();
 
             // find conflicts and automatically resolve them where possible
             var conflicts = new List<string>();
