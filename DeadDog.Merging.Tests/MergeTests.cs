@@ -2,7 +2,7 @@
 
 namespace DeadDog.Merging.Tests
 {
-    [TestClass()]
+    [TestClass]
     public class MergeTests
     {
         private static void AssertMerge(string common, string srcOne, string srcTwo, string expect)
@@ -17,8 +17,8 @@ namespace DeadDog.Merging.Tests
             Assert.AreEqual(expect, merged);
         }
 
-        [TestMethod()]
-        public void mergeTest1()
+        [TestMethod]
+        public void Identity()
         {
             AssertMerge
             (
@@ -29,8 +29,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest2()
+        [TestMethod]
+        public void Source1Change()
         {
             AssertMerge
             (
@@ -41,8 +41,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest3()
+        [TestMethod]
+        public void Source2Change()
         {
             AssertMerge
             (
@@ -53,8 +53,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest4()
+        [TestMethod]
+        public void Source1MultiChange()
         {
             AssertMerge
             (
@@ -65,8 +65,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest5()
+        [TestMethod]
+        public void Source2MultiChange()
         {
             AssertMerge
             (
@@ -77,8 +77,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest6()
+        [TestMethod]
+        public void ChangeInBothSources()
         {
             AssertMerge
             (
@@ -89,8 +89,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest7()
+        [TestMethod]
+        public void ChangeWithElongation()
         {
             AssertMerge
             (
@@ -101,8 +101,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest8()
+        [TestMethod]
+        public void ChangeWithShortening()
         {
             AssertMerge
             (
@@ -113,8 +113,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest9()
+        [TestMethod]
+        public void OneSourceCompleteDeletion()
         {
             AssertMerge
             (
@@ -125,8 +125,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest10()
+        [TestMethod]
+        public void TwoSourcesDistinctDeletion()
         {
             AssertMerge
             (
@@ -137,8 +137,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest11()
+        [TestMethod]
+        public void SingleSourceMove()
         {
             AssertMerge
             (
@@ -149,8 +149,8 @@ namespace DeadDog.Merging.Tests
             );
         }
 
-        [TestMethod()]
-        public void mergeTest12()
+        [TestMethod]
+        public void OneMoveOneChange()
         {
             AssertMerge
             (
