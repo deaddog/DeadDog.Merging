@@ -5,100 +5,160 @@ namespace DeadDog.Merging.Tests
     [TestClass()]
     public class MergeTests
     {
+        private static void AssertMerge(string common, string srcOne, string srcTwo, string expect)
+        {
+            var merged = Merger.merge
+            (
+                ancestor: common,
+                a: srcOne,
+                b: srcTwo
+            );
+
+            Assert.AreEqual(expect, merged);
+        }
+
         [TestMethod()]
         public void mergeTest1()
         {
-            string result = Merger.merge("test", "test", "test");
-
-            Assert.AreEqual("test", result);
+            AssertMerge
+            (
+                expect: "test",
+                common: "test",
+                srcOne: "test",
+                srcTwo: "test"
+            );
         }
 
         [TestMethod()]
         public void mergeTest2()
         {
-            string result = Merger.merge("test", "hest", "test");
-
-            Assert.AreEqual("hest", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "hest",
+                srcTwo: "test",
+                expect: "hest"
+            );
         }
 
         [TestMethod()]
         public void mergeTest3()
         {
-            string result = Merger.merge("test", "test", "vest");
-
-            Assert.AreEqual("vest", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "test",
+                srcTwo: "vest",
+                expect: "vest"
+            );
         }
 
         [TestMethod()]
         public void mergeTest4()
         {
-            string result = Merger.merge("test", "hast", "test");
-
-            Assert.AreEqual("hast", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "hast",
+                srcTwo: "test",
+                expect: "hast"
+            );
         }
 
         [TestMethod()]
         public void mergeTest5()
         {
-            string result = Merger.merge("test", "test", "fast");
-
-            Assert.AreEqual("fast", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "test",
+                srcTwo: "fast",
+                expect: "fast"
+            );
         }
 
         [TestMethod()]
         public void mergeTest6()
         {
-            string result = Merger.merge("test", "vest", "tast");
-
-            Assert.AreEqual("vast", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "vest",
+                srcTwo: "tast",
+                expect: "vast"
+            );
         }
 
         [TestMethod()]
         public void mergeTest7()
         {
-            string result = Merger.merge("test", "fest", "tester");
-
-            Assert.AreEqual("fester", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "fest",
+                srcTwo: "tester",
+                expect: "fester"
+            );
         }
 
         [TestMethod()]
         public void mergeTest8()
         {
-            string result = Merger.merge("test", "vest", "tes");
-
-            Assert.AreEqual("ves", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "vest",
+                srcTwo: "tes",
+                expect: "ves"
+            );
         }
 
         [TestMethod()]
         public void mergeTest9()
         {
-            string result = Merger.merge("test", "", "test");
-
-            Assert.AreEqual("", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "",
+                srcTwo: "test",
+                expect: ""
+            );
         }
 
         [TestMethod()]
         public void mergeTest10()
         {
-            string result = Merger.merge("test", "te", "st");
-
-            Assert.AreEqual("", result);
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "te",
+                srcTwo: "st",
+                expect: ""
+            );
         }
 
         [TestMethod()]
         public void mergeTest11()
         {
-            string result = Merger.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbbbbbbb", "bbbbbbbbbbaaaaaaaaaa");
-
-            Assert.AreEqual("bbbbbbbbbbaaaaaaaaaa", result);
+            AssertMerge
+            (
+                common: "aaaaaaaaaabbbbbbbbbb",
+                srcOne: "aaaaaaaaaabbbbbbbbbb",
+                srcTwo: "bbbbbbbbbbaaaaaaaaaa",
+                expect: "bbbbbbbbbbaaaaaaaaaa"
+            );
         }
 
         [TestMethod()]
         public void mergeTest12()
         {
-            string result = Merger.merge("aaaaaaaaaabbbbbbbbbb", "aaaaaaaaaabbbbccbbbb", "bbbbbbbbbbaaaaaaaaaa");
-
-            Assert.AreEqual("bbbbccbbbbaaaaaaaaaa", result);
+            AssertMerge
+            (
+                common: "aaaaaaaaaabbbbbbbbbb",
+                srcOne: "aaaaaaaaaabbbbccbbbb",
+                srcTwo: "bbbbbbbbbbaaaaaaaaaa",
+                expect: "bbbbccbbbbaaaaaaaaaa"
+            );
         }
     }
 }
