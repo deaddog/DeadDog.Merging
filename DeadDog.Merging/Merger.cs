@@ -157,11 +157,6 @@ namespace DeadDog.Merging
 
             var changes = diff_a.AddRange(diff_b).OrderBy(x => x.OldRange.Start).ToImmutableList();
 
-            // compute offset lists
-            var offset_changes_ab = OffsetManager.ConstructNoMove(changes);
-            var offset_changes_a = OffsetManager.Construct(diff_a);
-            var offset_changes_b = OffsetManager.Construct(diff_b);
-
             // compute the preliminary merge
             var preliminary_merge = ancestor.ToImmutableList();
             int pos_offset = 0;
@@ -174,7 +169,6 @@ namespace DeadDog.Merging
 
                     preliminary_merge = pre.AddRange(post);
                     pos_offset -= delete.OldRange.Length;
-                    offset_changes_ab.AddOffset(delete.OldRange.Start, -delete.OldRange.Length);
                 }
                 else if (c is Insert<T> insert)
                 {
@@ -183,7 +177,6 @@ namespace DeadDog.Merging
 
                     preliminary_merge = pre.AddRange(insert.Value).AddRange(post);
                     pos_offset += insert.Value.Count;
-                    offset_changes_ab.AddOffset(insert.OldRange.Start, insert.Value.Count);
                 }
 
             return preliminary_merge;
