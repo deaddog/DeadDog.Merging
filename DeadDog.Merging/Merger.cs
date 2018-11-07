@@ -16,109 +16,68 @@ namespace DeadDog.Merging
             this.diffMethod = diffMethod;
         }
 
-        private class ConflictManager
-        {
-            private bool removeA;
-            private bool removeB;
-            private List<string> conflicts;
-
-            public ConflictManager()
-            {
-                this.removeA = false;
-                this.removeB = false;
-                this.conflicts = new List<string>();
-            }
-
-            public void Swap()
-            {
-                bool temp = removeA;
-                removeA = removeB;
-                removeB = temp;
-
-                for (int i = 0; i < conflicts.Count; i++)
-                    conflicts[i] = conflicts[i].Replace("[A]", "[T]").Replace("[B]", "[A]").Replace("[T]", "[B]");
-            }
-
-            public bool RemoveA
-            {
-                get { return removeA; }
-                set { removeA = value; }
-            }
-            public bool RemoveB
-            {
-                get { return removeB; }
-                set { removeB = value; }
-            }
-
-            public void AddConflict(string conflict)
-            {
-                this.conflicts.Add(conflict);
-            }
-
-            public IEnumerable<string> GetConflicts()
-            {
-                foreach (var c in conflicts)
-                    yield return c;
-            }
-        }
-
-        private void resolveConflict(IChange<T> a, IChange<T> b, ConflictManager cm)
+        private IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
         {
             switch (a)
             {
-                case Delete<T> delete:
-                    resolveConflict(delete, b, cm);
-                    break;
-
-                case Insert<T> insert:
-                    resolveConflict(insert, b, cm);
-                    break;
+                case Delete<T> delete: return ResolveConflict(delete, b);
+                case Insert<T> insert: return ResolveConflict(insert, b);
 
                 default:
                     throw new ArgumentException($"Unknown change type: {a.GetType().Name}.");
             }
         }
 
-        private void resolveConflict(Delete<T> a, IChange<T> b, ConflictManager cm)
+        private IResolved<T> ResolveConflict(Delete<T> a, IChange<T> b)
         {
             switch (b)
             {
                 case Delete<T> delete:
-                    // if two Delete actions overlap, take the union of their ranges
                     if (a.OldRange.OverlapsWith(delete.OldRange))
                     {
-                        a.OldRange = Range.Join(a.OldRange, delete.OldRange);
-                        cm.RemoveB = true;
+                        var value = a.Value;
+                        var range = Range.Join(a.OldRange, delete.OldRange);
+
+                        var newDelete = new Delete<T>
+                        (
+                            value: a.Value,
+                            deletedRange: Range.Join(a.OldRange, delete.OldRange),
+                            newPosition: a.NewRange.Start
+                        );
+
+                        return Resolved.AsMerge(a, delete, newDelete);
                     }
-                    break;
+                    else
+                        return Resolved.AsNoMerge(a, delete);
 
                 case Insert<T> insert:
-                    // Insert actions inside the range of Delete actions collide
                     if (a.OldRange.Contains(insert.OldRange, includeStart: false))
-                        cm.AddConflict("[A] is deleting text that [B] is inserting into.");
-                    break;
+                        return Resolved.AsConflict(a, insert, "[A] is deleting text that [B] is inserting into.");
+                    else
+                        return Resolved.AsNoMerge(a, insert);
 
                 default:
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
             }
         }
-        private void resolveConflict(Insert<T> a, IChange<T> b, ConflictManager cm)
+        private IResolved<T> ResolveConflict(Insert<T> a, IChange<T> b)
         {
             switch (b)
             {
                 case Delete<T> delete:
-                    resolveConflict(delete, a, cm);
-                    cm.Swap();
-                    break;
+                    if (delete.OldRange.Contains(a.OldRange, includeStart: false))
+                        return Resolved.AsConflict(delete, a, "[B] is deleting text that [A] is inserting into.");
+                    else
+                        return Resolved.AsNoMerge(delete, a);
 
                 case Insert<T> insert:
-                    // Insert actions at the same position collide unless the inserted text is the same
                     if (a.NewRange.Start == insert.NewRange.Start)
                         if (a.Value.Equals(insert.Value))
-                            cm.RemoveB = true;
+                            return Resolved.AsMerge(a, insert, a);
                         else
-                            cm.AddConflict("[A] && [B] are inserting text at the same location.");
-                    break;
+                            return Resolved.AsConflict(a, insert, "[A] && [B] are inserting text at the same location.");
+                    else
+                        return Resolved.AsNoMerge(a, insert);
 
                 default:
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
@@ -127,37 +86,32 @@ namespace DeadDog.Merging
 
         public IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
         {
-            // compute the diffs from the common ancestor
             var diff_a = diffMethod.Diff(ancestor, a).ToImmutableList();
             var diff_b = diffMethod.Diff(ancestor, b).ToImmutableList();
-
-            // find conflicts and automatically resolve them where possible
-            var conflicts = new List<string>();
 
             for (int i = 0; i < diff_a.Count; i++)
                 for (int j = 0; j < diff_b.Count; j++)
                 {
-                    ConflictManager cm = new ConflictManager();
-                    resolveConflict(diff_a[i], diff_b[j], cm);
+                    var resolved = ResolveConflict(diff_a[i], diff_b[j]);
 
-                    conflicts.AddRange(cm.GetConflicts());
-
-                    if (cm.RemoveB)
-                        diff_b.RemoveAt(j--);
-                    if (cm.RemoveA)
+                    switch (resolved)
                     {
-                        diff_a.RemoveAt(i--);
-                        break;
+                        case UnResolvedMerge<T> conflict: throw new Exception("CONFLICT!");
+                        case ResolvedNoMerge<T> noMerge: break;
+
+                        case ResolvedMerge<T> merge:
+                            {
+                                diff_b = diff_b.RemoveAt(j--);
+                                diff_a = diff_a.SetItem(i, merge.Merged);
+                            };
+                            break;
+
+                        default: throw new NotSupportedException($"The type {resolved.GetType().Name} is not supported as a resolve type.");
                     }
                 }
 
-            // throw an error if there are conflicts
-            if (conflicts.Count > 0)
-                throw new Exception("CONFLICT!");
-
             var changes = diff_a.AddRange(diff_b).OrderBy(x => x.OldRange.Start).ToImmutableList();
 
-            // compute the preliminary merge
             var preliminary_merge = ancestor.ToImmutableList();
             int pos_offset = 0;
 
