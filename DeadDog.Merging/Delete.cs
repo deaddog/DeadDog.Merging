@@ -15,7 +15,7 @@ namespace DeadDog.Merging
 
         public IImmutableList<T> Value { get; }
 
-        public Range OldRange { get; set; }
+        public Range OldRange { get; }
         public Range NewRange { get; }
     }
 }
