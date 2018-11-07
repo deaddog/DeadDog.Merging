@@ -138,6 +138,30 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
+        public void TwoSourcesSameDeletion()
+        {
+            AssertMerge
+            (
+                common: "test",
+                srcOne: "te",
+                srcTwo: "te",
+                expect: "te"
+            );
+        }
+
+        [TestMethod]
+        public void TwoSourcesOverlappingDeletion()
+        {
+            AssertMerge
+            (
+                common: "fest",
+                srcOne: "f",
+                srcTwo: "fes",
+                expect: "f"
+            );
+        }
+
+        [TestMethod]
         public void SingleSourceMove()
         {
             AssertMerge
