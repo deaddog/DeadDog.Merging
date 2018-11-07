@@ -6,7 +6,7 @@ namespace DeadDog.Merging.Tests
     public class RangeTests
     {
         [TestMethod]
-        public void ContainsSelfTest()
+        public void ContainsSelf()
         {
             var zero = new Range(0, 0);
             var one = new Range(1, 1);
@@ -22,7 +22,7 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
-        public void ContainsUnitTest()
+        public void ContainsUnit()
         {
             var zeroTwo = new Range(0, 2);
 
@@ -36,7 +36,7 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
-        public void OverlapsSelfTest()
+        public void OverlapsSelf()
         {
             var zero = new Range(0, 0);
             var one = new Range(1, 1);
@@ -48,7 +48,7 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
-        public void OverlapsUnitTest()
+        public void OverlapsUnit()
         {
             var zeroTwo = new Range(0, 2);
 
@@ -58,7 +58,7 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
-        public void JoinSelfTest()
+        public void JoinSelf()
         {
             var zero = new Range(0, 0);
             var one = new Range(1, 1);
@@ -70,7 +70,7 @@ namespace DeadDog.Merging.Tests
         }
 
         [TestMethod]
-        public void JoinUnitTest()
+        public void JoinUnit()
         {
             var zeroTwo = new Range(0, 2);
 
