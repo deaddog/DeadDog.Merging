@@ -29,6 +29,8 @@ namespace DeadDog.Merging
 
         public static IEnumerable<IChange<T>> GetMerged<T>(IImmutableList<IChange<T>> changesSourceA, IImmutableList<IChange<T>> changesSourceB)
         {
+            var conflicts = ImmutableList<Conflict<T>>.Empty;
+
             for (int i = 0; i < changesSourceA.Count; i++)
                 for (int j = 0; j < changesSourceB.Count; j++)
                 {
@@ -36,7 +38,14 @@ namespace DeadDog.Merging
 
                     switch (resolved)
                     {
-                        case UnResolvedMerge<T> conflict: throw new Exception("CONFLICT!");
+                        case UnResolvedMerge<T> conflict:
+                            conflicts = conflicts.Add(new Conflict<T>
+                            (
+                                changeA: conflict.ChangeA,
+                                changeB: conflict.ChangeB,
+                                message: conflict.Message
+                            ));
+                            break;
                         case ResolvedNoMerge<T> noMerge: break;
 
                         case ResolvedMerge<T> merge:
@@ -49,6 +58,9 @@ namespace DeadDog.Merging
                         default: throw new NotSupportedException($"The type {resolved.GetType().Name} is not supported as a resolve type.");
                     }
                 }
+
+            if (conflicts.Count > 0)
+                throw new ConflictsException<T>(conflicts);
 
             return changesSourceA.AddRange(changesSourceB).OrderBy(x => x.OldRange.Start).ToImmutableList();
         }
