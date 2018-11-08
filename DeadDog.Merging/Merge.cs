@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -6,15 +7,21 @@ namespace DeadDog.Merging
 {
     public static class Merge<T>
     {
-        public static IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
+        public static IEnumerable<T> merge(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
         {
             var diffA = EditDistance.GetDifference(ancestor, sourceA).ToImmutableList();
             var diffB = EditDistance.GetDifference(ancestor, sourceB).ToImmutableList();
 
-            for (int i = 0; i < diffA.Count; i++)
-                for (int j = 0; j < diffB.Count; j++)
+            var changes = GetMerged(diffA, diffB).ToImmutableList();
+            return ApplyChanges(ancestor, changes);
+        }
+
+        public static IEnumerable<IChange<T>> GetMerged(IImmutableList<IChange<T>> changesSourceA, IImmutableList<IChange<T>> changesSourceB)
+        {
+            for (int i = 0; i < changesSourceA.Count; i++)
+                for (int j = 0; j < changesSourceB.Count; j++)
                 {
-                    var resolved = ResolveConflict(diffA[i], diffB[j]);
+                    var resolved = ResolveConflict(changesSourceA[i], changesSourceB[j]);
 
                     switch (resolved)
                     {
@@ -23,8 +30,8 @@ namespace DeadDog.Merging
 
                         case ResolvedMerge<T> merge:
                             {
-                                diffB = diffB.RemoveAt(j--);
-                                diffA = diffA.SetItem(i, merge.Merged);
+                                changesSourceB = changesSourceB.RemoveAt(j--);
+                                changesSourceA = changesSourceA.SetItem(i, merge.Merged);
                             };
                             break;
 
@@ -32,9 +39,11 @@ namespace DeadDog.Merging
                     }
                 }
 
-            var changes = diffA.AddRange(diffB).OrderBy(x => x.OldRange.Start).ToImmutableList();
-
-            var preliminary_merge = ancestor.ToImmutableList();
+            return changesSourceA.AddRange(changesSourceB).OrderBy(x => x.OldRange.Start).ToImmutableList();
+        }
+        public static IEnumerable<T> ApplyChanges(IImmutableList<T> source, IImmutableList<IChange<T>> changes)
+        {
+            var preliminary_merge = source.ToImmutableList();
             int pos_offset = 0;
 
             foreach (var c in changes)
