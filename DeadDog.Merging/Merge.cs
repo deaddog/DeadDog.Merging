@@ -7,9 +7,9 @@ namespace DeadDog.Merging
 {
     public static class Merge
     {
-        public static string merge(string ancestor, string sourceA, string sourceB)
+        public static string GetMerged(string ancestor, string sourceA, string sourceB)
         {
-            var merged = merge
+            var merged = GetMerged
             (
                 ancestor: ancestor.ToImmutableList(),
                 sourceA: sourceA.ToImmutableList(),
@@ -18,7 +18,7 @@ namespace DeadDog.Merging
 
             return new string(merged);
         }
-        public static IEnumerable<T> merge<T>(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
+        public static IEnumerable<T> GetMerged<T>(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
         {
             var diffA = EditDistance.GetDifference(ancestor, sourceA).ToImmutableList();
             var diffB = EditDistance.GetDifference(ancestor, sourceB).ToImmutableList();
