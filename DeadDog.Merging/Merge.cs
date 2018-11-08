@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DeadDog.Merging
 {
-    public class Merger<T> where T : IEquatable<T>
+    public class Merge<T> where T : IEquatable<T>
     {
         private IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
         {
@@ -128,7 +128,7 @@ namespace DeadDog.Merging
         }
     }
 
-    public static class Merger
+    public static class Merge
     {
         public static string merge(string ancestor, string a, string b)
         {
@@ -136,7 +136,7 @@ namespace DeadDog.Merging
         }
         public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
         {
-            return new Merger<T>().merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
+            return new Merge<T>().merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
         }
     }
 }

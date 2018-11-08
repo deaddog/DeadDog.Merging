@@ -7,7 +7,7 @@ namespace DeadDog.Merging.Tests
     {
         private static void AssertMerge(string common, string srcOne, string srcTwo, string expect)
         {
-            var merged = Merger.merge
+            var merged = Merge.merge
             (
                 ancestor: common,
                 a: srcOne,
