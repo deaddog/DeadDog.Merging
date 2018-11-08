@@ -6,6 +6,60 @@ namespace DeadDog.Merging
 {
     public static class Merge<T>
     {
+        public static IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
+        {
+            var diffA = EditDistance.GetDifference(ancestor, sourceA).ToImmutableList();
+            var diffB = EditDistance.GetDifference(ancestor, sourceB).ToImmutableList();
+
+            for (int i = 0; i < diffA.Count; i++)
+                for (int j = 0; j < diffB.Count; j++)
+                {
+                    var resolved = ResolveConflict(diffA[i], diffB[j]);
+
+                    switch (resolved)
+                    {
+                        case UnResolvedMerge<T> conflict: throw new Exception("CONFLICT!");
+                        case ResolvedNoMerge<T> noMerge: break;
+
+                        case ResolvedMerge<T> merge:
+                            {
+                                diffB = diffB.RemoveAt(j--);
+                                diffA = diffA.SetItem(i, merge.Merged);
+                            };
+                            break;
+
+                        default: throw new NotSupportedException($"The type {resolved.GetType().Name} is not supported as a resolve type.");
+                    }
+                }
+
+            var changes = diffA.AddRange(diffB).OrderBy(x => x.OldRange.Start).ToImmutableList();
+
+            var preliminary_merge = ancestor.ToImmutableList();
+            int pos_offset = 0;
+
+            foreach (var c in changes)
+                if (c is Delete<T> delete)
+                {
+                    var pre = preliminary_merge.GetRange(0, delete.OldRange.Start + pos_offset);
+                    var post = preliminary_merge.GetRange(delete.OldRange.End + pos_offset);
+
+                    preliminary_merge = pre.AddRange(post);
+                    pos_offset -= delete.OldRange.Length;
+                }
+                else if (c is Insert<T> insert)
+                {
+                    var pre = preliminary_merge.GetRange(0, insert.OldRange.Start + pos_offset);
+                    var post = preliminary_merge.GetRange(insert.OldRange.End + pos_offset);
+
+                    preliminary_merge = pre.AddRange(insert.Value).AddRange(post);
+                    pos_offset += insert.Value.Count;
+                }
+                else
+                    throw new NotSupportedException($"The change type {c.GetType().Name} is not a supported change type.");
+
+            return preliminary_merge;
+        }
+
         private static IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
         {
             switch (a)
@@ -72,58 +126,6 @@ namespace DeadDog.Merging
                 default:
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
             }
-        }
-
-        public static IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
-        {
-            var diff_a = EditDistance.GetDifference(ancestor, a).ToImmutableList();
-            var diff_b = EditDistance.GetDifference(ancestor, b).ToImmutableList();
-
-            for (int i = 0; i < diff_a.Count; i++)
-                for (int j = 0; j < diff_b.Count; j++)
-                {
-                    var resolved = ResolveConflict(diff_a[i], diff_b[j]);
-
-                    switch (resolved)
-                    {
-                        case UnResolvedMerge<T> conflict: throw new Exception("CONFLICT!");
-                        case ResolvedNoMerge<T> noMerge: break;
-
-                        case ResolvedMerge<T> merge:
-                            {
-                                diff_b = diff_b.RemoveAt(j--);
-                                diff_a = diff_a.SetItem(i, merge.Merged);
-                            };
-                            break;
-
-                        default: throw new NotSupportedException($"The type {resolved.GetType().Name} is not supported as a resolve type.");
-                    }
-                }
-
-            var changes = diff_a.AddRange(diff_b).OrderBy(x => x.OldRange.Start).ToImmutableList();
-
-            var preliminary_merge = ancestor.ToImmutableList();
-            int pos_offset = 0;
-
-            foreach (var c in changes)
-                if (c is Delete<T> delete)
-                {
-                    var pre = preliminary_merge.GetRange(0, delete.OldRange.Start + pos_offset);
-                    var post = preliminary_merge.GetRange(delete.OldRange.End + pos_offset);
-
-                    preliminary_merge = pre.AddRange(post);
-                    pos_offset -= delete.OldRange.Length;
-                }
-                else if (c is Insert<T> insert)
-                {
-                    var pre = preliminary_merge.GetRange(0, insert.OldRange.Start + pos_offset);
-                    var post = preliminary_merge.GetRange(insert.OldRange.End + pos_offset);
-
-                    preliminary_merge = pre.AddRange(insert.Value).AddRange(post);
-                    pos_offset += insert.Value.Count;
-                }
-
-            return preliminary_merge;
         }
     }
 
