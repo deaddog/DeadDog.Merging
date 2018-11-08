@@ -5,9 +5,20 @@ using System.Linq;
 
 namespace DeadDog.Merging
 {
-    public static class Merge<T>
+    public static class Merge
     {
-        public static IEnumerable<T> merge(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
+        public static string merge(string ancestor, string sourceA, string sourceB)
+        {
+            var merged = merge
+            (
+                ancestor: ancestor.ToImmutableList(),
+                sourceA: sourceA.ToImmutableList(),
+                sourceB: sourceB.ToImmutableList()
+            ).ToArray();
+
+            return new string(merged);
+        }
+        public static IEnumerable<T> merge<T>(IImmutableList<T> ancestor, IImmutableList<T> sourceA, IImmutableList<T> sourceB)
         {
             var diffA = EditDistance.GetDifference(ancestor, sourceA).ToImmutableList();
             var diffB = EditDistance.GetDifference(ancestor, sourceB).ToImmutableList();
@@ -16,7 +27,7 @@ namespace DeadDog.Merging
             return ApplyChanges(ancestor, changes);
         }
 
-        public static IEnumerable<IChange<T>> GetMerged(IImmutableList<IChange<T>> changesSourceA, IImmutableList<IChange<T>> changesSourceB)
+        public static IEnumerable<IChange<T>> GetMerged<T>(IImmutableList<IChange<T>> changesSourceA, IImmutableList<IChange<T>> changesSourceB)
         {
             for (int i = 0; i < changesSourceA.Count; i++)
                 for (int j = 0; j < changesSourceB.Count; j++)
@@ -41,7 +52,7 @@ namespace DeadDog.Merging
 
             return changesSourceA.AddRange(changesSourceB).OrderBy(x => x.OldRange.Start).ToImmutableList();
         }
-        public static IEnumerable<T> ApplyChanges(IImmutableList<T> source, IImmutableList<IChange<T>> changes)
+        public static IEnumerable<T> ApplyChanges<T>(IImmutableList<T> source, IImmutableList<IChange<T>> changes)
         {
             var preliminary_merge = source.ToImmutableList();
             int pos_offset = 0;
@@ -69,7 +80,7 @@ namespace DeadDog.Merging
             return preliminary_merge;
         }
 
-        private static IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict<T>(IChange<T> a, IChange<T> b)
         {
             switch (a)
             {
@@ -81,7 +92,7 @@ namespace DeadDog.Merging
             }
         }
 
-        private static IResolved<T> ResolveConflict(Delete<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict<T>(Delete<T> a, IChange<T> b)
         {
             switch (b)
             {
@@ -113,7 +124,7 @@ namespace DeadDog.Merging
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
             }
         }
-        private static IResolved<T> ResolveConflict(Insert<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict<T>(Insert<T> a, IChange<T> b)
         {
             switch (b)
             {
@@ -135,18 +146,6 @@ namespace DeadDog.Merging
                 default:
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
             }
-        }
-    }
-
-    public static class Merge
-    {
-        public static string merge(string ancestor, string a, string b)
-        {
-            return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
-        }
-        public static T[] merge<T>(T[] ancestor, T[] a, T[] b)
-        {
-            return Merge<T>.merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
         }
     }
 }

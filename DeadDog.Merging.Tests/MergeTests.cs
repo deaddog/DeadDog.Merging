@@ -10,8 +10,8 @@ namespace DeadDog.Merging.Tests
             var merged = Merge.merge
             (
                 ancestor: common,
-                a: srcOne,
-                b: srcTwo
+                sourceA: srcOne,
+                sourceB: srcTwo
             );
 
             Assert.AreEqual(expect, merged);
