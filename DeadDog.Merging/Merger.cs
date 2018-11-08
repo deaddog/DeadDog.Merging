@@ -7,15 +7,6 @@ namespace DeadDog.Merging
 {
     public class Merger<T> where T : IEquatable<T>
     {
-        private IDiff<T> diffMethod;
-
-        public Merger(IDiff<T> diffMethod = null)
-        {
-            if (diffMethod == null)
-                diffMethod = new OptimalDiff<T>();
-            this.diffMethod = diffMethod;
-        }
-
         private IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
         {
             switch (a)
@@ -86,8 +77,8 @@ namespace DeadDog.Merging
 
         public IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
         {
-            var diff_a = diffMethod.Diff(ancestor, a).ToImmutableList();
-            var diff_b = diffMethod.Diff(ancestor, b).ToImmutableList();
+            var diff_a = EditDistance.GetDifference(ancestor, a).ToImmutableList();
+            var diff_b = EditDistance.GetDifference(ancestor, b).ToImmutableList();
 
             for (int i = 0; i < diff_a.Count; i++)
                 for (int j = 0; j < diff_b.Count; j++)
@@ -145,7 +136,7 @@ namespace DeadDog.Merging
         }
         public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
         {
-            return new Merger<T>(null).merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
+            return new Merger<T>().merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
         }
     }
 }
