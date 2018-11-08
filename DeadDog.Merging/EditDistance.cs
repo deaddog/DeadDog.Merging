@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 
 namespace DeadDog.Merging
 {
@@ -28,66 +29,71 @@ namespace DeadDog.Merging
                 return distance / (double)(from.Count + to.Count);
         }
 
-        public static Tuple<int, ChangeType>[] GetOperations<T>(IImmutableList<T> from, IImmutableList<T> to)
+        public static IEnumerable<Operation> GetOperations<T>(IImmutableList<T> from, IImmutableList<T> to)
         {
             return GetOperations(from, to, EqualityComparer<T>.Default.Equals);
         }
-        public static Tuple<int, ChangeType>[] GetOperations<T>(IImmutableList<T> from, IImmutableList<T> to, Func<T, T, bool> equals)
+        public static IEnumerable<Operation> GetOperations<T>(IImmutableList<T> from, IImmutableList<T> to, Func<T, T, bool> equals)
         {
-            int[,] d3 = GetOperationsTable(from, to, equals, false);
-            var changes = new List<Tuple<int, ChangeType>>();
+            int[,] ops = GetOperationsTable(from, to, equals, false);
+
+            var operations = ImmutableList<Operation>.Empty;
+
             int si = 0, fi = 0;
-            int ls = from.Count, lf = to.Count;
 
             while (si != from.Count || fi != to.Count)
             {
                 if (si == from.Count)
                 {
-                    changes.Add(Tuple.Create(si, ChangeType.Insertion));
+                    operations = operations.Add(new Operation(si, OperationType.Insertion));
                     fi++;
                 }
                 else if (fi == to.Count)
                 {
-                    changes.Add(Tuple.Create(si, ChangeType.Deletion));
+                    operations = operations.Add(new Operation(si, OperationType.Deletion));
                     si++;
                 }
                 else if (from[si].Equals(to[fi]))
-                { si++; fi++; }
-                else if (d3[si + 1, fi] <= d3[si, fi + 1])
                 {
-                    changes.Add(Tuple.Create(si, ChangeType.Deletion));
+                    si++;
+                    fi++;
+                }
+                else if (ops[si + 1, fi] <= ops[si, fi + 1])
+                {
+                    operations = operations.Add(new Operation(si, OperationType.Deletion));
                     si++;
                 }
                 else
                 {
-                    changes.Add(Tuple.Create(si, ChangeType.Insertion));
+                    operations = operations.Add(new Operation(si, OperationType.Insertion));
                     fi++;
                 }
             }
-            return changes.ToArray();
+            return operations;
         }
 
         public static IEnumerable<IChange<T>> GetDifference<T>(IImmutableList<T> from, IImmutableList<T> to, bool allowReplace = true)
         {
             return GetDifference(from, to, EqualityComparer<T>.Default.Equals);
         }
-        public static IEnumerable<IChange<T>> GetDifference<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals)
+        public static IEnumerable<IChange<T>> GetDifference<T>(IImmutableList<T> from, IImmutableList<T> to, Func<T, T, bool> equals)
         {
-            var diff = GetOperations(a, b, equals);
-            Array.Sort(diff, (x, y) => x.Item1.CompareTo(y.Item1));
+            var operations = GetOperations(from, to, equals)
+                .OrderBy(x => x.Position)
+                .ToImmutableList();
 
             var changes = new List<IChange<T>>();
             int pos_diff = 0;
             int offset_b = 0;
 
-            while (pos_diff < diff.Length)
+            while (pos_diff < operations.Count)
             {
                 int length = 0;
-                int pos_a_old = diff[pos_diff].Item1;
+                int pos_a_old = operations[pos_diff].Position;
 
-                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Insertion)
+                while (pos_diff < operations.Count && operations[pos_diff].Type == OperationType.Insertion)
                 {
-                    if (diff[pos_diff].Item1 != pos_a_old)
+                    if (operations[pos_diff].Position != pos_a_old)
                         break;
                     length++;
                     pos_diff++;
@@ -97,27 +103,27 @@ namespace DeadDog.Merging
                     Range r = Range.FromStartLength(pos_a_old + offset_b, length);
                     int pos_a = pos_a_old;
 
-                    var sub = b.GetRange(r);
+                    var sub = to.GetRange(r);
                     changes.Add(new Insert<T>(sub, pos_a, r));
                     offset_b += length;
                 }
-                if (pos_diff >= diff.Length)
+                if (pos_diff >= operations.Count)
                     break;
                 length = 0;
-                pos_a_old = diff[pos_diff].Item1;
-                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Deletion)
+                pos_a_old = operations[pos_diff].Position;
+                while (pos_diff < operations.Count && operations[pos_diff].Type == OperationType.Deletion)
                 {
-                    if (diff[pos_diff].Item1 != pos_a_old + length)
+                    if (operations[pos_diff].Position != pos_a_old + length)
                         break;
                     length++;
                     pos_diff++;
                 }
                 if (length > 0)
                 {
-                    Range r = Range.FromStartLength(pos_a_old, length);
+                    var r = Range.FromStartLength(pos_a_old, length);
                     int pos_b = pos_a_old + offset_b;
 
-                    var sub = a.GetRange(r);
+                    var sub = from.GetRange(r);
                     changes.Add(new Delete<T>(sub, r, pos_b));
                     offset_b -= length;
                 }

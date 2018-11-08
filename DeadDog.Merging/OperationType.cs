@@ -1,6 +1,6 @@
 ﻿namespace DeadDog.Merging
 {
-    public enum ChangeType
+    public enum OperationType
     {
         Insertion,
         Deletion
