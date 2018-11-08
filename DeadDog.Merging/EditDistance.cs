@@ -67,6 +67,65 @@ namespace DeadDog.Merging
             return changes.ToArray();
         }
 
+        public static IEnumerable<IChange<T>> GetDifference<T>(IImmutableList<T> from, IImmutableList<T> to, bool allowReplace = true)
+        {
+            return GetDifference(from, to, EqualityComparer<T>.Default.Equals);
+        }
+        public static IEnumerable<IChange<T>> GetDifference<T>(IImmutableList<T> a, IImmutableList<T> b, Func<T, T, bool> equals)
+        {
+            var diff = GetOperations(a, b, equals);
+            Array.Sort(diff, (x, y) => x.Item1.CompareTo(y.Item1));
+
+            var changes = new List<IChange<T>>();
+            int pos_diff = 0;
+            int offset_b = 0;
+
+            while (pos_diff < diff.Length)
+            {
+                int length = 0;
+                int pos_a_old = diff[pos_diff].Item1;
+
+                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Insertion)
+                {
+                    if (diff[pos_diff].Item1 != pos_a_old)
+                        break;
+                    length++;
+                    pos_diff++;
+                }
+                if (length > 0)
+                {
+                    Range r = Range.FromStartLength(pos_a_old + offset_b, length);
+                    int pos_a = pos_a_old;
+
+                    var sub = b.GetRange(r);
+                    changes.Add(new Insert<T>(sub, pos_a, r));
+                    offset_b += length;
+                }
+                if (pos_diff >= diff.Length)
+                    break;
+                length = 0;
+                pos_a_old = diff[pos_diff].Item1;
+                while (pos_diff < diff.Length && diff[pos_diff].Item2 == ChangeType.Deletion)
+                {
+                    if (diff[pos_diff].Item1 != pos_a_old + length)
+                        break;
+                    length++;
+                    pos_diff++;
+                }
+                if (length > 0)
+                {
+                    Range r = Range.FromStartLength(pos_a_old, length);
+                    int pos_b = pos_a_old + offset_b;
+
+                    var sub = a.GetRange(r);
+                    changes.Add(new Delete<T>(sub, r, pos_b));
+                    offset_b -= length;
+                }
+            }
+
+            return changes;
+        }
+
         private static int[,] GetOperationsTable<T>(IImmutableList<T> from, IImmutableList<T> to, Func<T, T, bool> equals, bool allowReplace)
         {
             int[,] operations = new int[from.Count + 1, to.Count + 1];
