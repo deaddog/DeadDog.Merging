@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace DeadDog.Merging
 {
-    public class Merge<T> where T : IEquatable<T>
+    public static class Merge<T>
     {
-        private IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict(IChange<T> a, IChange<T> b)
         {
             switch (a)
             {
@@ -19,7 +18,7 @@ namespace DeadDog.Merging
             }
         }
 
-        private IResolved<T> ResolveConflict(Delete<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict(Delete<T> a, IChange<T> b)
         {
             switch (b)
             {
@@ -51,7 +50,7 @@ namespace DeadDog.Merging
                     throw new ArgumentException($"Unknown change type: {b.GetType().Name}.");
             }
         }
-        private IResolved<T> ResolveConflict(Insert<T> a, IChange<T> b)
+        private static IResolved<T> ResolveConflict(Insert<T> a, IChange<T> b)
         {
             switch (b)
             {
@@ -75,7 +74,7 @@ namespace DeadDog.Merging
             }
         }
 
-        public IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
+        public static IImmutableList<T> merge(IImmutableList<T> ancestor, IImmutableList<T> a, IImmutableList<T> b)
         {
             var diff_a = EditDistance.GetDifference(ancestor, a).ToImmutableList();
             var diff_b = EditDistance.GetDifference(ancestor, b).ToImmutableList();
@@ -134,9 +133,9 @@ namespace DeadDog.Merging
         {
             return new string(merge(ancestor.ToCharArray(), a.ToCharArray(), b.ToCharArray()));
         }
-        public static T[] merge<T>(T[] ancestor, T[] a, T[] b) where T : IEquatable<T>
+        public static T[] merge<T>(T[] ancestor, T[] a, T[] b)
         {
-            return new Merge<T>().merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
+            return Merge<T>.merge(ancestor.ToImmutableList(), a.ToImmutableList(), b.ToImmutableList()).ToArray();
         }
     }
 }
